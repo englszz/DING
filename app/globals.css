@@ -1,0 +1,256 @@
+@font-face {
+  font-family: 'HighCruiser';
+  src: url('/fonts/HighCruiser.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────
+   SYSTEM DESIGN TOKENS
+───────────────────────────────────────── */
+:root {
+  --color-bg:          #FFFFFF;
+  --color-surface:     #F7F9FA;
+  --color-surface-alt: #EEF2F6;
+  --color-teal:        #0097B2;
+  --color-teal-hover:  #00839B;
+  --color-accent-2:    #2563EB; /* Option A: Cobalt Blue */
+  --color-text:        #1A1A1A;
+  --color-text-muted:  #6B7280;
+  --color-border:      #E5E7EB;
+
+  --font-display: 'HighCruiser', 'Arial Black', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius-none: 0px;
+}
+
+/* ─────────────────────────────────────────
+   STRICT ANGULAR BORDER RADIUS 0 & RESET
+───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0 !important;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--color-teal);
+  color: #FFFFFF;
+}
+
+/* ─────────────────────────────────────────
+   TYPOGRAPHY ROLES
+───────────────────────────────────────── */
+/* ONLY for Logo, H1 Hero, and H2 Section Titles — NO CSS text-transform */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* ─────────────────────────────────────────
+   BUTTONS (Min 16px gap between adjacent buttons)
+───────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 0 !important;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 12px 20px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+/* Primary CTA Button: Teal background (Max 1 per screen) */
+.btn-primary {
+  background: var(--color-teal);
+  color: #FFFFFF;
+  border-color: var(--color-teal);
+}
+
+.btn-primary:hover {
+  background: var(--color-teal-hover);
+  border-color: var(--color-teal-hover);
+}
+
+/* Secondary Button: Neutral border and text */
+.btn-outline {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.btn-outline:hover {
+  background: var(--color-surface);
+  border-color: var(--color-text-muted);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+/* ─────────────────────────────────────────
+   CARDS & CONTAINERS (Min 24px padding)
+───────────────────────────────────────── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0 !important;
+  padding: 24px;
+}
+
+.card-alt {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 0 !important;
+  padding: 20px;
+}
+
+.card-album {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0 !important;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.card-album:hover {
+  border-color: var(--color-teal);
+}
+
+/* ─────────────────────────────────────────
+   FORM INPUTS & LABELS
+───────────────────────────────────────── */
+.form-label {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 8px; /* 8px spacing: label -> input */
+}
+
+.form-input {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 0 !important;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 3px rgba(0, 151, 178, 0.12);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ─────────────────────────────────────────
+   BADGES & SECTION TITLES
+───────────────────────────────────────── */
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-teal);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 0 !important;
+}
+
+.badge-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-accent-2);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 0 !important;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--color-text);
+  margin-bottom: 24px;
+}
+
+/* ─────────────────────────────────────────
+   NAVBAR
+───────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 70px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Utilities */
+.text-teal { color: var(--color-teal); }
+.text-accent-2 { color: var(--color-accent-2); }
+.text-muted { color: var(--color-text-muted); }
+.bg-surface { background: var(--color-surface); }
+.bg-surface-alt { background: var(--color-surface-alt); }
+.border-gray { border-color: var(--color-border); }

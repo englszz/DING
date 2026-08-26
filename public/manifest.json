@@ -1,0 +1,25 @@
+{
+  "name": "DING",
+  "short_name": "DING",
+  "description": "Tu diario musical — registra, califica y descubre música.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#06090a",
+  "theme_color": "#0097b2",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/logoícono.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logoícono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
