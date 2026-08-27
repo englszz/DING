@@ -90,6 +90,14 @@ body {
   text-decoration: none;
 }
 
+@media (max-width: 380px) {
+  .btn {
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+}
+
 /* Primary CTA Button: Teal background (Max 1 per screen) */
 .btn-primary {
   background: var(--color-teal);

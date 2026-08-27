@@ -25,12 +25,12 @@ export default async function LandingPage() {
         <nav className="nav">
           <div className="page-container w-full flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative h-10 w-32 flex-shrink-0">
+              <div className="relative h-8 w-24 sm:h-10 sm:w-32 flex-shrink-0">
                 <Image src="/assets/logo2.png" alt="DING logo" fill sizes="128px" className="object-contain" priority />
               </div>
             </Link>
-            <div className="flex items-center gap-4 font-medium">
-              <Link href="/dashboard" className="btn btn-primary text-sm">
+            <div className="flex items-center gap-2 sm:gap-4 font-medium">
+              <Link href="/dashboard" className="btn btn-primary text-xs sm:text-sm px-2 sm:px-4">
                 Mi diario
                 <FontAwesomeIcon icon={faArrowRight} />
               </Link>
@@ -39,33 +39,33 @@ export default async function LandingPage() {
         </nav>
 
         <section
-          className="relative flex flex-col items-center justify-center min-h-[85vh] px-6 pb-24"
-          style={{ paddingTop: "145px" }}
+          className="relative flex flex-col items-center justify-center min-h-[85vh] px-5 sm:px-6 pb-24"
+          style={{ paddingTop: "120px" }}
         >
           <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
-            <div className="mb-8 flex flex-col items-center">
-              <div className="relative w-28 h-28 mx-auto mb-4">
+            <div className="mb-6 sm:mb-8 flex flex-col items-center">
+              <div className="relative w-20 h-20 sm:w-28 sm:h-28 mx-auto mb-4">
                 <Image src="/assets/icon-blue.png" alt="DING Star Icon" fill sizes="112px" className="object-contain" priority />
               </div>
             </div>
 
             <h1
-              className="font-display text-teal mb-6"
-              style={{ fontSize: "clamp(2.5rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
+              className="font-display text-teal mb-4 sm:mb-6"
+              style={{ fontSize: "clamp(1.8rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
             >
               Tu diario musical te espEra
             </h1>
 
-            <p className="text-muted max-w-2xl text-base md:text-lg leading-relaxed">
+            <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-2">
               Continúa registrando tus escuchas, calificando álbumes y construyendo tu historial musical.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-6" style={{ marginTop: "48px" }}>
-              <Link href="/dashboard" className="btn btn-primary text-base py-3.5 px-8 font-medium">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto" style={{ marginTop: "36px" }}>
+              <Link href="/dashboard" className="btn btn-primary text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
                 <span>Ir a mi diario</span>
                 <FontAwesomeIcon icon={faArrowRight} />
               </Link>
-              <Link href="/search" className="btn btn-outline text-base py-3.5 px-8 font-medium">
+              <Link href="/search" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
                 <span>Buscar álbumes</span>
               </Link>
             </div>
@@ -110,51 +110,51 @@ export default async function LandingPage() {
   );
 }
 
-// Public landing
+  // Public landing
   return (
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <nav className="nav">
         <div className="page-container w-full flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="relative h-10 w-32 flex-shrink-0">
+            <div className="relative h-8 w-24 sm:h-10 sm:w-32 flex-shrink-0">
               <Image src="/assets/logo2.png" alt="DING logo" fill sizes="128px" className="object-contain" priority />
             </div>
           </Link>
-          <div className="flex items-center gap-4 font-medium">
-            <Link href="/login" className="btn btn-ghost text-sm">Iniciar sesión</Link>
-            <Link href="/register" className="btn btn-primary text-sm">Crear cuenta</Link>
+          <div className="flex items-center gap-2 sm:gap-4 font-medium">
+            <Link href="/login" className="btn btn-ghost text-xs sm:text-sm px-2 sm:px-4">Iniciar sesión</Link>
+            <Link href="/register" className="btn btn-primary text-xs sm:text-sm px-2 sm:px-4">Crear cuenta</Link>
           </div>
         </div>
       </nav>
 
       <section
-        className="relative flex flex-col items-center justify-center min-h-[85vh] px-6 pb-24"
-        style={{ paddingTop: "145px" }}
+        className="relative flex flex-col items-center justify-center min-h-[85vh] px-5 sm:px-6 pb-24"
+        style={{ paddingTop: "120px" }}
       >
         <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
-          <div className="mb-8 flex flex-col items-center">
-            <div className="relative w-28 h-28 mx-auto mb-4">
+          <div className="mb-6 sm:mb-8 flex flex-col items-center">
+            <div className="relative w-20 h-20 sm:w-28 sm:h-28 mx-auto mb-4">
               <Image src="/assets/icon-blue.png" alt="DING Star Icon" fill sizes="112px" className="object-contain" priority />
             </div>
           </div>
 
           <h1
-            className="font-display text-teal mb-6"
-            style={{ fontSize: "clamp(2.5rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
+            className="font-display text-teal mb-4 sm:mb-6"
+            style={{ fontSize: "clamp(1.8rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
           >
             Registra, Califica & Descubre música
           </h1>
 
-          <p className="text-muted max-w-2xl text-base md:text-lg leading-relaxed">
+          <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-2">
             Registra tu historial de escuchas. Puntúa álbumes y canciones track por track. Construye tu propio diario musical y compártelo con tus amigos.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-6" style={{ marginTop: "48px" }}>
-            <Link href="/register" className="btn btn-primary text-base py-3.5 px-8 font-medium">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto" style={{ marginTop: "36px" }}>
+            <Link href="/register" className="btn btn-primary text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
               <span>Empezar ahora</span>
               <FontAwesomeIcon icon={faArrowRight} />
             </Link>
-            <Link href="/login" className="btn btn-outline text-base py-3.5 px-8 font-medium">
+            <Link href="/login" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
               <span>Ya tengo cuenta</span>
             </Link>
           </div>
