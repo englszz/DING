@@ -60,12 +60,12 @@ export default async function LandingPage() {
               Continúa registrando tus escuchas, calificando álbumes y construyendo tu historial musical.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto" style={{ marginTop: "36px" }}>
-              <Link href="/dashboard" className="btn btn-primary text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6" style={{ marginTop: "36px" }}>
+              <Link href="/dashboard" className="btn btn-primary text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium">
                 <span>Ir a mi diario</span>
                 <FontAwesomeIcon icon={faArrowRight} />
               </Link>
-              <Link href="/search" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
+              <Link href="/search" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium">
                 <span>Buscar álbumes</span>
               </Link>
             </div>
@@ -149,12 +149,12 @@ export default async function LandingPage() {
             Registra tu historial de escuchas. Puntúa álbumes y canciones track por track. Construye tu propio diario musical y compártelo con tus amigos.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto" style={{ marginTop: "36px" }}>
-            <Link href="/register" className="btn btn-primary text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6" style={{ marginTop: "36px" }}>
+            <Link href="/register" className="btn btn-primary text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium">
               <span>Empezar ahora</span>
               <FontAwesomeIcon icon={faArrowRight} />
             </Link>
-            <Link href="/login" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium w-full sm:w-auto justify-center">
+            <Link href="/login" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium">
               <span>Ya tengo cuenta</span>
             </Link>
           </div>
