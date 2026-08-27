@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description:
     "Registra, califica y descubre música. Tu historial de escuchas, tus reseñas, tu mundo musical.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
