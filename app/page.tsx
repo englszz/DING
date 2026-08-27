@@ -56,8 +56,9 @@ export default async function LandingPage() {
               Tu diario musical te espEra
             </h1>
 
-            <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-2">
-              Continúa registrando tus escuchas, calificando álbumes y construyendo tu historial musical.
+            <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-4 sm:px-6">
+              Continúa registrando tus escuchas, calificando álbumes <br className="hidden sm:inline" />
+              <span className="sm:hidden">y </span>construyendo tu historial musical.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6" style={{ marginTop: "36px" }}>
@@ -85,7 +86,7 @@ export default async function LandingPage() {
         </section>
 
         {/* How it works */}
-        <section className="py-24 px-6">
+        <section className="py-24 sm:py-32 px-6">
           <div className="page-container">
             <h2 className="section-title">Cómo Funciona</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
@@ -145,8 +146,9 @@ export default async function LandingPage() {
             Registra, Califica & Descubre música
           </h1>
 
-          <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-2">
-            Registra tu historial de escuchas. Puntúa álbumes y canciones track por track. Construye tu propio diario musical y compártelo con tus amigos.
+          <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-4 sm:px-6">
+            Registra tu historial de escuchas. Puntúa álbumes y canciones track por track. Construye tu propio diario musical <br className="hidden sm:inline" />
+            <span className="sm:hidden">y </span>compártelo con tus amigos.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6" style={{ marginTop: "36px" }}>
@@ -174,7 +176,7 @@ export default async function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 px-6">
+      <section className="py-24 sm:py-32 px-6">
         <div className="page-container">
           <h2 className="section-title">Cómo Funciona</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">

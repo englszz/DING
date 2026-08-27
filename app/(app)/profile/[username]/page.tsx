@@ -96,25 +96,18 @@ export default async function ProfilePage({
             )}
 
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="font-display text-2xl md:text-3xl text-teal">
                   {profile.display_name || profile.username}
                 </h1>
                 {profile.is_admin && (
-                  <span className="inline-flex items-center gap-1 bg-teal/20 text-teal text-xs font-bold px-2 py-0.5 border border-teal/30">
+                  <span className="inline-flex items-center gap-1 bg-teal text-white text-xs font-bold px-2 py-0.5">
                     <FontAwesomeIcon icon={faCrown} className="text-[10px]" />
                     Creador
                   </span>
                 )}
-                <span className="badge-accent flex items-center gap-1">
-                  <FontAwesomeIcon
-                    icon={profile.privacy === "public" ? faGlobe : faLock}
-                    className="text-[10px]"
-                  />
-                  {profile.privacy === "public" ? "Público" : "Privado"}
-                </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 <p className="text-muted text-sm font-medium">
                   @{profile.username}
                 </p>
@@ -140,17 +133,26 @@ export default async function ProfilePage({
 
           {/* Stats + Privacy Toggle */}
           <div className="flex flex-col items-end gap-4">
-            {isOwnProfile && <PrivacyToggle currentPrivacy={profile.privacy} />}
+            <div className="flex items-center gap-3">
+              <span className="badge-accent flex items-center gap-1 text-[0.65rem]">
+                <FontAwesomeIcon
+                  icon={profile.privacy === "public" ? faGlobe : faLock}
+                  className="text-[10px]"
+                />
+                {profile.privacy === "public" ? "Público" : "Privado"}
+              </span>
+              {isOwnProfile && <PrivacyToggle currentPrivacy={profile.privacy} />}
+            </div>
             <div className="card-alt flex items-center gap-8 justify-center">
               <div className="text-center">
-                <p className="text-teal text-2xl font-bold">{totalRated}</p>
+                <p className="text-teal text-3xl font-bold">{totalRated}</p>
                 <p className="text-muted text-xs uppercase font-medium">
                   Álbumes
                 </p>
               </div>
               <div className="w-[1px] h-8 bg-[var(--color-border)]" />
               <div className="text-center">
-                <p className="text-teal text-2xl font-bold">{avgRating}</p>
+                <p className="text-teal text-3xl font-bold">{avgRating}</p>
                 <p className="text-muted text-xs uppercase font-medium">
                   Promedio
                 </p>

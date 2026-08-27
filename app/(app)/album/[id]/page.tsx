@@ -64,16 +64,16 @@ export default async function AlbumDetailPage({
       </Link>
 
       {/* Album Header */}
-      <div className="card p-6 mb-8">
-        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+      <div className="card p-4 sm:p-6 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
           {/* Cover */}
-          <div className="w-48 h-48 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
+          <div className="w-36 h-36 sm:w-48 sm:h-48 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
             {album.cover_url ? (
               <Image
                 src={album.cover_url}
                 alt={album.title}
                 fill
-                sizes="192px"
+                sizes="(max-width: 640px) 144px, 192px"
                 priority
                 className="object-cover"
               />
@@ -92,12 +92,12 @@ export default async function AlbumDetailPage({
           </div>
 
           {/* Details */}
-          <div className="flex-1 flex flex-col justify-between h-full">
+          <div className="flex-1 flex flex-col justify-between h-full min-w-0">
             <div>
-              <h1 className="font-display text-3xl md:text-4xl text-teal mb-1">
+              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl text-teal mb-1 truncate">
                 {album.title}
               </h1>
-              <p className="text-lg font-bold text-[var(--color-text)]">
+              <p className="text-base sm:text-lg font-bold text-[var(--color-text)] truncate">
                 {album.artist_name}
               </p>
               <p className="text-muted text-sm mt-1 font-medium">

@@ -78,17 +78,17 @@ export default async function DashboardPage() {
   return (
     <div className="page-container py-4 flex-1 w-full">
       {/* Header */}
-      <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-[var(--color-border)] pb-6 gap-4">
+      <header className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--color-border)] pb-6 gap-3">
         <div>
-          <h1 className="font-display text-teal text-3xl md:text-4xl">
+          <h1 className="font-display text-teal text-2xl sm:text-3xl md:text-4xl">
             hola, {profile?.display_name || profile?.username || ".usuario"}
           </h1>
-          <p className="text-muted text-sm mt-1 font-medium">
+          <p className="text-muted text-xs sm:text-sm mt-1 font-medium">
             Tu diario musical
           </p>
         </div>
 
-        <Link href="/search" className="btn btn-primary">
+        <Link href="/search" className="btn btn-primary text-xs sm:text-sm py-2 sm:py-3 px-3 sm:px-4">
           <FontAwesomeIcon icon={faPlus} />
           <span>Registrar escucha</span>
         </Link>
@@ -130,47 +130,45 @@ export default async function DashboardPage() {
                   <Link
                     key={entry.id}
                     href={`/album/${album.id}`}
-                    className="card p-4 flex items-center justify-between hover:border-teal transition-colors block"
+                    className="card p-4 flex items-center gap-4 hover:border-teal transition-colors overflow-hidden"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                        {album.cover_url ? (
-                          <Image
-                            src={album.cover_url}
-                            alt={album.title}
-                            fill
-                            sizes="56px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <FontAwesomeIcon
-                            icon={faCompactDisc}
-                            className="text-accent-2 text-xl"
-                          />
+                    <div className="w-14 h-14 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                      {album.cover_url ? (
+                        <Image
+                          src={album.cover_url}
+                          alt={album.title}
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <FontAwesomeIcon
+                          icon={faCompactDisc}
+                          className="text-accent-2 text-xl"
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-display font-semibold text-[var(--color-text)] text-base truncate">
+                          {album.title}
+                        </p>
+                        {isReListen && (
+                          <span className="badge-accent text-[0.65rem] flex items-center gap-1 flex-shrink-0">
+                            <FontAwesomeIcon
+                              icon={faRotateRight}
+                              className="text-[9px]"
+                            />
+                            Reescucha
+                          </span>
                         )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-display font-semibold text-[var(--color-text)] text-base">
-                            {album.title}
-                          </p>
-                          {isReListen && (
-                            <span className="badge-accent text-[0.65rem] flex items-center gap-1">
-                              <FontAwesomeIcon
-                                icon={faRotateRight}
-                                className="text-[9px]"
-                              />
-                              Reescucha
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-muted text-xs mt-0.5 font-medium">
-                          {album.artist_name}
-                        </p>
-                      </div>
+                      <p className="text-muted text-xs mt-0.5 font-medium truncate">
+                        {album.artist_name}
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                       <div className="text-muted text-xs flex items-center gap-1.5 font-medium">
                         <FontAwesomeIcon icon={faClock} className="text-[10px]" />
                         <span>{formatRelativeDate(entry.listened_at)}</span>
