@@ -14,6 +14,7 @@ import {
   faSpinner,
   faUsers,
   faArrowLeft,
+  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import type { SearchResultAlbum, SearchResultUser } from "@/types";
 
@@ -358,7 +359,8 @@ export default function SearchPage() {
                 <p className="font-bold text-[var(--color-text)] text-base flex items-center gap-2">
                   {user.displayName || user.username}
                   {user.isAdmin && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white bg-teal px-1.5 py-0.5">
+                    <span className="inline-flex items-center gap-1 bg-teal text-white text-[10px] font-bold px-2 py-0.5">
+                      <FontAwesomeIcon icon={faCrown} className="text-[9px]" />
                       Administrador
                     </span>
                   )}
