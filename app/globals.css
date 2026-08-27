@@ -257,6 +257,7 @@ body {
 
 /* Utilities */
 .text-teal { color: var(--color-teal); }
+.bg-teal { background: var(--color-teal); color: #FFFFFF; }
 .text-accent-2 { color: var(--color-accent-2); }
 .text-muted { color: var(--color-text-muted); }
 .bg-surface { background: var(--color-surface); }

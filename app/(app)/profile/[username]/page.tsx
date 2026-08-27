@@ -95,13 +95,13 @@ export default async function ProfilePage({
               </div>
             )}
 
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="font-display text-2xl md:text-3xl text-teal">
                   {profile.display_name || profile.username}
                 </h1>
                 {profile.is_admin && (
-                  <span className="inline-flex items-center gap-1 bg-teal text-white text-xs font-bold px-2 py-0.5">
+                  <span className="bg-teal text-xs font-bold px-2 py-0.5 inline-flex items-center gap-1">
                     <FontAwesomeIcon icon={faCrown} className="text-[10px]" />
                     Creador
                   </span>
@@ -122,18 +122,26 @@ export default async function ProfilePage({
                   {profile.bio}
                 </p>
               ) : null}
-              <SocialEditor
-                websiteUrl={profile.website_url}
-                instagramUrl={profile.instagram_url}
-                twitterUrl={profile.twitter_url}
-                facebookUrl={profile.facebook_url}
-              />
+
+              {/* Social links + Privacy toggle on mobile */}
+              <div className="flex items-center gap-2 mt-4">
+                <SocialEditor
+                  websiteUrl={profile.website_url}
+                  instagramUrl={profile.instagram_url}
+                  twitterUrl={profile.twitter_url}
+                  facebookUrl={profile.facebook_url}
+                />
+                {isOwnProfile && (
+                  <PrivacyToggle currentPrivacy={profile.privacy} />
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Stats + Privacy Toggle */}
+          {/* Stats + Privacy Toggle (desktop only) */}
           <div className="flex flex-col items-end gap-4">
-            <div className="flex items-center gap-3">
+            {/* Desktop privacy badge + toggle */}
+            <div className="hidden md:flex items-center gap-3">
               <span className="badge-accent flex items-center gap-1 text-[0.65rem]">
                 <FontAwesomeIcon
                   icon={profile.privacy === "public" ? faGlobe : faLock}
@@ -141,7 +149,6 @@ export default async function ProfilePage({
                 />
                 {profile.privacy === "public" ? "Público" : "Privado"}
               </span>
-              {isOwnProfile && <PrivacyToggle currentPrivacy={profile.privacy} />}
             </div>
             <div className="card-alt flex items-center gap-8 justify-center">
               <div className="text-center">
@@ -158,6 +165,23 @@ export default async function ProfilePage({
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile stats - centered, larger */}
+        <div className="md:hidden card-alt mt-4 flex items-center justify-center gap-10">
+          <div className="text-center">
+            <p className="text-teal text-4xl font-bold">{totalRated}</p>
+            <p className="text-muted text-xs uppercase font-medium">
+              Álbumes
+            </p>
+          </div>
+          <div className="w-[1px] h-10 bg-[var(--color-border)]" />
+          <div className="text-center">
+            <p className="text-teal text-4xl font-bold">{avgRating}</p>
+            <p className="text-muted text-xs uppercase font-medium">
+              Promedio
+            </p>
           </div>
         </div>
       </div>

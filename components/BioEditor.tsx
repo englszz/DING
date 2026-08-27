@@ -37,14 +37,22 @@ export function BioEditor({ currentBio }: BioEditorProps) {
         {currentBio ? (
           <p className="text-[var(--color-text)] text-sm">{currentBio}</p>
         ) : (
-          <p className="text-muted text-xs italic">Agregar descripción...</p>
+          <button
+            onClick={() => setEditing(true)}
+            className="text-muted hover:text-teal transition-colors text-xs inline-flex items-center gap-1.5 mt-1"
+          >
+            <FontAwesomeIcon icon={faPenToSquare} className="text-[11px]" />
+            <span>Agregar descripción...</span>
+          </button>
         )}
-        <button
-          onClick={() => setEditing(true)}
-          className="text-muted hover:text-teal transition-colors mt-1"
-        >
-          <FontAwesomeIcon icon={faPenToSquare} className="text-xs" />
-        </button>
+        {currentBio && (
+          <button
+            onClick={() => setEditing(true)}
+            className="text-muted hover:text-teal transition-colors mt-1"
+          >
+            <FontAwesomeIcon icon={faPenToSquare} className="text-xs" />
+          </button>
+        )}
       </div>
     );
   }

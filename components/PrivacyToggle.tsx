@@ -36,10 +36,10 @@ export function PrivacyToggle({ currentPrivacy }: { currentPrivacy: string }) {
       type="button"
       onClick={toggle}
       disabled={saving}
-      className="btn btn-outline text-xs py-2 px-4 flex items-center gap-2"
+      className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors text-muted hover:text-teal flex-shrink-0"
+      title={privacy === "public" ? "Público" : "Privado"}
     >
-      <FontAwesomeIcon icon={privacy === "public" ? faGlobe : faLock} />
-      <span>{privacy === "public" ? "Público" : "Privado"}</span>
+      <FontAwesomeIcon icon={privacy === "public" ? faGlobe : faLock} className="text-sm" />
     </button>
   );
 }

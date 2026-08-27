@@ -111,9 +111,8 @@ export function SocialEditor({
 
   if (!editing) {
     return (
-      <div className="mt-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          {hasAnyLink ? (
+      <div className="inline-flex items-center gap-2 flex-wrap">
+        {hasAnyLink ? (
             <>
               {websiteUrl && (
                 <a
@@ -165,7 +164,6 @@ export function SocialEditor({
           >
             <FontAwesomeIcon icon={faPenToSquare} className="text-sm" />
           </button>
-        </div>
       </div>
     );
   }
