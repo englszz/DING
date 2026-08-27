@@ -30,6 +30,10 @@ export interface Profile {
   display_name?: string;
   avatar_url?: string;
   bio?: string;
+  website_url?: string;
+  instagram_url?: string;
+  twitter_url?: string;
+  facebook_url?: string;
   privacy: "public" | "private";
   is_admin?: boolean;
   created_at: string;

@@ -358,7 +358,7 @@ export default function SearchPage() {
                 <p className="font-bold text-[var(--color-text)] text-base flex items-center gap-2">
                   {user.displayName || user.username}
                   {user.isAdmin && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-teal bg-teal/10 px-1.5 py-0.5 border border-teal/30">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white bg-teal px-1.5 py-0.5">
                       Administrador
                     </span>
                   )}

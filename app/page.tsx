@@ -53,7 +53,7 @@ export default async function LandingPage() {
               className="font-display text-teal mb-6"
               style={{ fontSize: "clamp(2.5rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
             >
-              Tu diario musical te espera
+              Tu diario musical te espEra
             </h1>
 
             <p className="text-muted max-w-2xl text-base md:text-lg leading-relaxed">
@@ -103,14 +103,14 @@ export default async function LandingPage() {
             </div>
           </div>
           <p className="text-muted text-xs font-medium">
-            Proyecto Personal Engels · DING 2026
-          </p>
-        </footer>
-      </main>
-    );
-  }
+          Proyecto Personal · Engels Smith Damirón · DING
+        </p>
+      </footer>
+    </main>
+  );
+}
 
-  // Public landing
+// Public landing
   return (
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <nav className="nav">
@@ -192,7 +192,7 @@ export default async function LandingPage() {
           </div>
         </div>
         <p className="text-muted text-xs font-medium">
-          Proyecto Personal Engels · DING 2026
+          Proyecto Personal · Engels Smith Damirón · DING
         </p>
       </footer>
     </main>
@@ -203,7 +203,7 @@ function FeatureCard({ icon, title, desc }: { icon: any; title: string; desc: st
   return (
     <div className="card text-center">
       <div className="flex justify-center mb-3">
-        <FontAwesomeIcon icon={icon} width={16} height={16} style={{ color: "var(--color-teal)" }} />
+        <FontAwesomeIcon icon={icon} width={25} height={25} style={{ color: "var(--color-teal)" }} />
       </div>
       <h3 className="font-bold text-[var(--color-text)] text-lg mb-2">{title}</h3>
       <p className="text-muted text-sm leading-relaxed">{desc}</p>
@@ -215,7 +215,7 @@ function StepCard({ icon, number, title, desc }: { icon: any; number: string; ti
   return (
     <div className="card text-center">
       <div className="flex justify-center mb-3">
-        <FontAwesomeIcon icon={icon} width={16} height={16} style={{ color: "var(--color-teal)" }} />
+        <FontAwesomeIcon icon={icon} width={25} height={25} style={{ color: "var(--color-teal)" }} />
       </div>
       <h3 className="font-bold text-[var(--color-text)] text-lg mb-2">{title}</h3>
       <p className="text-muted text-sm leading-relaxed">{desc}</p>

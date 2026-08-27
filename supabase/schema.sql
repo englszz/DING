@@ -164,3 +164,50 @@ CREATE POLICY "Users can manage own track reviews" ON public.track_reviews FOR A
     WHERE id = track_reviews.album_rating_id AND user_id = auth.uid()
   )
 );
+
+-- 7. TRACK RATINGS TABLE (Per-track rating, independent of album rating)
+CREATE TABLE IF NOT EXISTS public.track_ratings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  track_id UUID REFERENCES public.tracks(id) ON DELETE CASCADE NOT NULL,
+  rating NUMERIC(3, 1) NOT NULL CHECK (rating >= 0.0 AND rating <= 10.0),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, track_id)
+);
+
+ALTER TABLE public.track_ratings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Track ratings viewable by everyone" ON public.track_ratings;
+CREATE POLICY "Track ratings viewable by everyone" ON public.track_ratings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can manage own track ratings" ON public.track_ratings;
+CREATE POLICY "Users can manage own track ratings" ON public.track_ratings FOR ALL USING (auth.uid() = user_id);
+
+-- 8. ADMIN FLAG
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+
+-- 9. SOCIAL LINKS
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS website_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS instagram_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS twitter_url TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS facebook_url TEXT;
+
+-- 10. AVATAR STORAGE
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Users can upload own avatar" ON storage.objects;
+CREATE POLICY "Users can upload own avatar" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated'
+    AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "Avatar images are publicly accessible" ON storage.objects;
+CREATE POLICY "Avatar images are publicly accessible" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Users can update own avatar" ON storage.objects;
+CREATE POLICY "Users can update own avatar" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+DROP POLICY IF EXISTS "Users can delete own avatar" ON storage.objects;
+CREATE POLICY "Users can delete own avatar" ON storage.objects
+  FOR DELETE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);

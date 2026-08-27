@@ -81,7 +81,7 @@ export default async function DashboardPage() {
       <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between border-b border-[var(--color-border)] pb-6 gap-4">
         <div>
           <h1 className="font-display text-teal text-3xl md:text-4xl">
-            Hola, {profile?.display_name || profile?.username || ".usuario"}
+            hola, {profile?.display_name || profile?.username || ".usuario"}
           </h1>
           <p className="text-muted text-sm mt-1 font-medium">
             Tu diario musical

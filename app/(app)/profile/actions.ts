@@ -82,3 +82,48 @@ export async function updateAvatarFile(dataUrl: string, mimeType: string) {
   if (error) throw error;
   return { success: true, url: publicUrl };
 }
+
+export async function updateBio(bio: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ bio, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function updateSocialLinks(links: {
+  website_url: string;
+  instagram_url: string;
+  twitter_url: string;
+  facebook_url: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      website_url: links.website_url || null,
+      instagram_url: links.instagram_url || null,
+      twitter_url: links.twitter_url || null,
+      facebook_url: links.facebook_url || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id);
+
+  if (error) throw error;
+  return { success: true };
+}

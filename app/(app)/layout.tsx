@@ -30,7 +30,7 @@ export default function AppLayout({
           </div>
         </div>
         <p className="text-muted text-xs font-medium">
-          Proyecto Personal Engels · DING 2026
+          Proyecto Personal · Engels Smith Damirón · DING
         </p>
       </footer>
     </div>

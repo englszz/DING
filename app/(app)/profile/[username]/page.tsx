@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { PrivacyToggle } from "@/components/PrivacyToggle";
 import { UsernameEditor } from "@/components/UsernameEditor";
 import { AvatarEditor } from "@/components/AvatarEditor";
+import { BioEditor } from "@/components/BioEditor";
+import { SocialEditor } from "@/components/SocialEditor";
 
 export default async function ProfilePage({
   params,
@@ -120,11 +122,19 @@ export default async function ProfilePage({
                   <UsernameEditor currentUsername={profile.username} />
                 )}
               </div>
-              {profile.bio && (
+              {isOwnProfile ? (
+                <BioEditor currentBio={profile.bio} />
+              ) : profile.bio ? (
                 <p className="text-[var(--color-text)] text-sm mt-2">
                   {profile.bio}
                 </p>
-              )}
+              ) : null}
+              <SocialEditor
+                websiteUrl={profile.website_url}
+                instagramUrl={profile.instagram_url}
+                twitterUrl={profile.twitter_url}
+                facebookUrl={profile.facebook_url}
+              />
             </div>
           </div>
 
