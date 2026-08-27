@@ -150,7 +150,7 @@ export default async function ProfilePage({
                 {profile.privacy === "public" ? "Público" : "Privado"}
               </span>
             </div>
-            <div className="card-alt flex items-center gap-8 justify-center">
+            <div className="hidden md:flex card-alt items-center gap-8 justify-center">
               <div className="text-center">
                 <p className="text-teal text-3xl font-bold">{totalRated}</p>
                 <p className="text-muted text-xs uppercase font-medium">
