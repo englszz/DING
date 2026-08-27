@@ -29,13 +29,12 @@ export async function GET(request: Request) {
       let query = supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url, is_admin")
-        .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
         .limit(10);
 
       if (user) {
-        query = query.or(`privacy.eq.public,id.eq.${user.id}`);
+        query = query.or(`and(username.ilike.%${q}%,privacy.eq.public),and(username.ilike.%${q}%,id.eq.${user.id}),and(display_name.ilike.%${q}%,privacy.eq.public),and(display_name.ilike.%${q}%,id.eq.${user.id})`);
       } else {
-        query = query.eq("privacy", "public");
+        query = query.or(`username.ilike.%${q}%,display_name.ilike.%${q}%`).eq("privacy", "public");
       }
 
       const { data: users, error } = await query;

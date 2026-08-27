@@ -65,11 +65,11 @@ export function AlbumActions({
   return (
     <div className="flex flex-col gap-4">
       {/* Action Buttons */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
         <button
           type="button"
           onClick={() => setShowForm(!showForm)}
-          className="btn btn-primary text-xs"
+          className="btn btn-primary text-xs w-full sm:w-auto justify-center"
         >
           <FontAwesomeIcon icon={existingRating ? faPenToSquare : faPlus} />
           <span>
@@ -80,7 +80,7 @@ export function AlbumActions({
           type="button"
           onClick={handleListen}
           disabled={listening}
-          className="btn btn-outline text-xs"
+          className="btn btn-outline text-xs w-full sm:w-auto justify-center"
         >
           {listening ? (
             <FontAwesomeIcon icon={faSpinner} spin className="text-teal" />

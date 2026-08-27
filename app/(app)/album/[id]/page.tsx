@@ -64,16 +64,16 @@ export default async function AlbumDetailPage({
       </Link>
 
       {/* Album Header */}
-      <div className="card p-4 sm:p-6 mb-8">
+      <div className="card p-4 sm:p-6 mb-8 overflow-hidden">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
           {/* Cover */}
-          <div className="w-36 h-36 sm:w-48 sm:h-48 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
+          <div className="w-32 h-32 sm:w-48 sm:h-48 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
             {album.cover_url ? (
               <Image
                 src={album.cover_url}
                 alt={album.title}
                 fill
-                sizes="(max-width: 640px) 144px, 192px"
+                sizes="(max-width: 640px) 128px, 192px"
                 priority
                 className="object-cover"
               />
@@ -84,20 +84,20 @@ export default async function AlbumDetailPage({
               />
             )}
             {userRating && (
-              <div className="absolute bottom-3 right-3 rating-badge rating-badge-lg">
-                <FontAwesomeIcon icon={faStar} className="text-sm mr-1" />
+              <div className="absolute bottom-2 right-2 rating-badge text-xs">
+                <FontAwesomeIcon icon={faStar} className="text-[10px] mr-1" />
                 {Number(userRating.rating).toFixed(1)}
               </div>
             )}
           </div>
 
           {/* Details */}
-          <div className="flex-1 flex flex-col justify-between h-full min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             <div>
-              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl text-teal mb-1 truncate">
+              <h1 className="font-display text-xl sm:text-3xl md:text-4xl text-teal mb-1 break-words">
                 {album.title}
               </h1>
-              <p className="text-base sm:text-lg font-bold text-[var(--color-text)] truncate">
+              <p className="text-sm sm:text-lg font-bold text-[var(--color-text)] truncate">
                 {album.artist_name}
               </p>
               <p className="text-muted text-sm mt-1 font-medium">

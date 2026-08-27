@@ -171,11 +171,11 @@ export default function SearchPage() {
 
       {/* Tabs */}
       {!isDiscographyView && (
-        <div className="flex items-center gap-4 mb-6 border-b border-[var(--color-border)] pb-4">
+        <div className="flex items-center gap-2 sm:gap-4 mb-6 border-b border-[var(--color-border)] pb-4 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab("albums")}
-            className={`btn text-sm font-medium ${activeTab === "albums" ? "btn-primary" : "btn-ghost"}`}
+            className={`btn text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === "albums" ? "btn-primary" : "btn-ghost"}`}
           >
             <FontAwesomeIcon icon={faCompactDisc} />
             <span>Álbumes</span>
@@ -183,7 +183,7 @@ export default function SearchPage() {
           <button
             type="button"
             onClick={() => setActiveTab("artists")}
-            className={`btn text-sm font-medium ${activeTab === "artists" ? "btn-primary" : "btn-ghost"}`}
+            className={`btn text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === "artists" ? "btn-primary" : "btn-ghost"}`}
           >
             <FontAwesomeIcon icon={faUsers} />
             <span>Artistas</span>
@@ -191,7 +191,7 @@ export default function SearchPage() {
           <button
             type="button"
             onClick={() => setActiveTab("users")}
-            className={`btn text-sm font-medium ${activeTab === "users" ? "btn-primary" : "btn-ghost"}`}
+            className={`btn text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === "users" ? "btn-primary" : "btn-ghost"}`}
           >
             <FontAwesomeIcon icon={faUser} />
             <span>Usuarios</span>

@@ -39,7 +39,7 @@ export default async function LandingPage() {
         </nav>
 
         <section
-          className="relative flex flex-col items-center justify-center min-h-[85vh] px-5 sm:px-6 pb-24"
+          className="relative flex flex-col items-center justify-center min-h-[85vh] px-8 sm:px-6 pb-24"
           style={{ paddingTop: "120px" }}
         >
           <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
@@ -57,8 +57,8 @@ export default async function LandingPage() {
             </h1>
 
             <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-4 sm:px-6">
-              Continúa registrando tus escuchas, calificando álbumes <br className="hidden sm:inline" />
-              <span className="sm:hidden">y </span>construyendo tu historial musical.
+              Continúa registrando tus escuchas, calificando álbumes y <br className="hidden sm:inline" />
+              construyendo tu historial musical.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6" style={{ marginTop: "36px" }}>
@@ -128,10 +128,10 @@ export default async function LandingPage() {
         </div>
       </nav>
 
-      <section
-        className="relative flex flex-col items-center justify-center min-h-[85vh] px-5 sm:px-6 pb-24"
-        style={{ paddingTop: "120px" }}
-      >
+        <section
+          className="relative flex flex-col items-center justify-center min-h-[85vh] px-8 sm:px-6 pb-24"
+          style={{ paddingTop: "120px" }}
+        >
         <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
           <div className="mb-6 sm:mb-8 flex flex-col items-center">
             <div className="relative w-20 h-20 sm:w-28 sm:h-28 mx-auto mb-4">
