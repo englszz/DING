@@ -203,7 +203,7 @@ function FeatureCard({ icon, title, desc }: { icon: any; title: string; desc: st
   return (
     <div className="card text-center">
       <div className="flex justify-center mb-3">
-        <FontAwesomeIcon icon={icon} style={{ color: "var(--color-teal)", fontSize: "1rem" }} />
+        <FontAwesomeIcon icon={icon} width={16} height={16} style={{ color: "var(--color-teal)" }} />
       </div>
       <h3 className="font-bold text-[var(--color-text)] text-lg mb-2">{title}</h3>
       <p className="text-muted text-sm leading-relaxed">{desc}</p>
@@ -215,7 +215,7 @@ function StepCard({ icon, number, title, desc }: { icon: any; number: string; ti
   return (
     <div className="card text-center">
       <div className="flex justify-center mb-3">
-        <FontAwesomeIcon icon={icon} style={{ color: "var(--color-accent-2)", fontSize: "1rem" }} />
+        <FontAwesomeIcon icon={icon} width={16} height={16} style={{ color: "var(--color-teal)" }} />
       </div>
       <h3 className="font-bold text-[var(--color-text)] text-lg mb-2">{title}</h3>
       <p className="text-muted text-sm leading-relaxed">{desc}</p>
