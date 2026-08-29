@@ -29,6 +29,21 @@
 }
 
 /* ─────────────────────────────────────────
+   DARK THEME
+───────────────────────────────────────── */
+:root[data-theme="dark"] {
+  --color-bg:          #0F1115;
+  --color-surface:     #161A22;
+  --color-surface-alt: #1E242E;
+  --color-teal:        #12B5D1;
+  --color-teal-hover:  #0097B2;
+  --color-accent-2:    #5290FF;
+  --color-text:        #E7EAEE;
+  --color-text-muted:  #9AA3AE;
+  --color-border:      #2A323E;
+}
+
+/* ─────────────────────────────────────────
    STRICT ANGULAR BORDER RADIUS 0 & RESET
 ───────────────────────────────────────── */
 *, *::before, *::after {
@@ -176,7 +191,7 @@ body {
 }
 
 .form-input {
-  background: #FFFFFF;
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: 0 !important;
   color: var(--color-text);
@@ -243,7 +258,7 @@ body {
   right: 0;
   z-index: 50;
   height: 70px;
-  background: #FFFFFF;
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -258,6 +273,7 @@ body {
 /* Utilities */
 .text-teal { color: var(--color-teal); }
 .bg-teal { background: var(--color-teal); color: #FFFFFF; }
+.bg-accent-2 { background: var(--color-accent-2); }
 .text-accent-2 { color: var(--color-accent-2); }
 .text-muted { color: var(--color-text-muted); }
 .bg-surface { background: var(--color-surface); }

@@ -122,6 +122,7 @@ export default async function AlbumDetailPage({
                 albumId={album.id}
                 existingRating={userRating ? Number(userRating.rating) : null}
                 existingReview={userRating?.review || null}
+                deleteRatingId={userRating?.id}
               />
             </div>
           </div>

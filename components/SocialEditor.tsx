@@ -55,6 +55,7 @@ interface SocialEditorProps {
   instagramUrl?: string;
   twitterUrl?: string;
   facebookUrl?: string;
+  editable?: boolean;
 }
 
 export function SocialEditor({
@@ -62,6 +63,7 @@ export function SocialEditor({
   instagramUrl,
   twitterUrl,
   facebookUrl,
+  editable = true,
 }: SocialEditorProps) {
   const [editing, setEditing] = useState(false);
   const [values, setValues] = useState({
@@ -113,57 +115,59 @@ export function SocialEditor({
     return (
       <div className="inline-flex items-center gap-2 flex-wrap">
         {hasAnyLink ? (
-            <>
-              {websiteUrl && (
-                <a
-                  href={websiteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
-                >
-                  <FontAwesomeIcon icon={faGlobe} className="text-[var(--color-accent-2)] text-sm" />
-                </a>
-              )}
-              {instagramUrl && (
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
-                >
-                  <FontAwesomeIcon icon={faInstagram} className="text-[var(--color-accent-2)] text-sm" />
-                </a>
-              )}
-              {twitterUrl && (
-                <a
-                  href={twitterUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
-                >
-                  <FontAwesomeIcon icon={faXTwitter} className="text-[var(--color-accent-2)] text-sm" />
-                </a>
-              )}
-              {facebookUrl && (
-                <a
-                  href={facebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
-                >
-                  <FontAwesomeIcon icon={faFacebook} className="text-[var(--color-accent-2)] text-sm" />
-                </a>
-              )}
-            </>
-          ) : (
-            <p className="text-muted text-xs">Sin enlaces sociales</p>
-          )}
+          <>
+            {websiteUrl && (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
+              >
+                <FontAwesomeIcon icon={faGlobe} className="text-[var(--color-accent-2)] text-sm" />
+              </a>
+            )}
+            {instagramUrl && (
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
+              >
+                <FontAwesomeIcon icon={faInstagram} className="text-[var(--color-accent-2)] text-sm" />
+              </a>
+            )}
+            {twitterUrl && (
+              <a
+                href={twitterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
+              >
+                <FontAwesomeIcon icon={faXTwitter} className="text-[var(--color-accent-2)] text-sm" />
+              </a>
+            )}
+            {facebookUrl && (
+              <a
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
+              >
+                <FontAwesomeIcon icon={faFacebook} className="text-[var(--color-accent-2)] text-sm" />
+              </a>
+            )}
+          </>
+        ) : (
+          <p className="text-muted text-xs">Sin enlaces sociales</p>
+        )}
+        {editable && (
           <button
             onClick={() => setEditing(true)}
             className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors text-muted hover:text-teal"
           >
             <FontAwesomeIcon icon={faPenToSquare} className="text-sm" />
           </button>
+        )}
       </div>
     );
   }

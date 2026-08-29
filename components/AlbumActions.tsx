@@ -11,17 +11,20 @@ import {
   faX,
 } from "@fortawesome/free-solid-svg-icons";
 import { saveAlbumRating, registerListen } from "@/app/(app)/album/actions";
+import { DeleteRatingButton } from "@/components/DeleteRatingButton";
 
 interface Props {
   albumId: string;
   existingRating: number | null;
   existingReview: string | null;
+  deleteRatingId?: string;
 }
 
 export function AlbumActions({
   albumId,
   existingRating,
   existingReview,
+  deleteRatingId,
 }: Props) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(!!existingRating);
@@ -76,19 +79,30 @@ export function AlbumActions({
             {existingRating ? "Editar calificación" : "Calificar álbum"}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={handleListen}
-          disabled={listening}
-          className="btn btn-outline text-xs w-full sm:w-auto justify-center"
-        >
-          {listening ? (
-            <FontAwesomeIcon icon={faSpinner} spin className="text-teal" />
-          ) : (
-            <FontAwesomeIcon icon={faPlus} className="text-teal" />
+        <div className="flex items-stretch sm:items-center gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={handleListen}
+            disabled={listening}
+            className="btn btn-outline text-xs flex-1 sm:flex-none justify-center"
+          >
+            {listening ? (
+              <FontAwesomeIcon icon={faSpinner} spin className="text-teal" />
+            ) : (
+              <FontAwesomeIcon icon={faPlus} className="text-teal" />
+            )}
+            <span>Registrar escucha</span>
+          </button>
+          {deleteRatingId && (
+            <div className="w-11 sm:w-9 flex items-center justify-center bg-accent-2 hover:opacity-90 transition-opacity flex-shrink-0">
+              <DeleteRatingButton
+                ratingId={deleteRatingId}
+                redirectHref="/dashboard"
+                dark
+              />
+            </div>
           )}
-          <span>Registrar escucha</span>
-        </button>
+        </div>
       </div>
 
       {/* Status Message */}

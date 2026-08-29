@@ -1,6 +1,13 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+
+export async function signOutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/");
+}
 
 export async function updateUsername(newUsername: string) {
   const supabase = await createClient();
@@ -95,6 +102,25 @@ export async function updateBio(bio: string) {
     .from("profiles")
     .update({ bio, updated_at: new Date().toISOString() })
     .eq("id", user.id);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function deleteAlbumRating(ratingId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  // Only delete ratings that belong to the authenticated user
+  const { error } = await supabase
+    .from("album_ratings")
+    .delete()
+    .eq("id", ratingId)
+    .eq("user_id", user.id);
 
   if (error) throw error;
   return { success: true };

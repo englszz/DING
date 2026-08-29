@@ -9,10 +9,10 @@ import {
   faMagnifyingGlass,
   faUser,
   faHouse,
-  faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -90,6 +90,7 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Link
             href={profile ? `/profile/${profile.username}` : "/dashboard"}
             className="w-9 h-9 border border-gray overflow-hidden relative block hover:border-teal transition-colors"

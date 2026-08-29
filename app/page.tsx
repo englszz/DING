@@ -10,8 +10,10 @@ import {
   faSearch,
   faPenToSquare,
   faCheck,
+  faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/server";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -20,6 +22,14 @@ export default async function LandingPage() {
   } = await supabase.auth.getUser();
 
   if (user) {
+    const { data: pf } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", user.id)
+      .single();
+    const statsHref = pf?.username
+      ? `/profile/${pf.username}/statistics`
+      : "/search";
     return (
       <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
         <nav className="nav">
@@ -30,6 +40,7 @@ export default async function LandingPage() {
               </div>
             </Link>
             <div className="flex items-center gap-2 sm:gap-4 font-medium">
+              <ThemeToggle />
               <Link href="/dashboard" className="btn btn-primary text-xs sm:text-sm px-2 sm:px-4">
                 Mi diario
                 <FontAwesomeIcon icon={faArrowRight} />
@@ -68,6 +79,10 @@ export default async function LandingPage() {
               </Link>
               <Link href="/search" className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium">
                 <span>Buscar álbumes</span>
+              </Link>
+              <Link href={statsHref} className="btn btn-outline text-sm sm:text-base py-3 px-6 sm:py-3.5 sm:px-8 font-medium">
+                <span>Ver estadísticas</span>
+                <FontAwesomeIcon icon={faChartLine} />
               </Link>
             </div>
           </div>
@@ -122,6 +137,7 @@ export default async function LandingPage() {
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4 font-medium">
+            <ThemeToggle />
             <Link href="/login" className="btn btn-ghost text-xs sm:text-sm px-2 sm:px-4">Iniciar sesión</Link>
             <Link href="/register" className="btn btn-primary text-xs sm:text-sm px-2 sm:px-4">Crear cuenta</Link>
           </div>

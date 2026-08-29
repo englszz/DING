@@ -2,41 +2,41 @@
 
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun, faMoon } from "@fortawesome/free-solid-svg-icons";
+import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("ding-theme") as "light" | "dark" | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.setAttribute("data-theme", savedTheme);
-    } else {
-      document.documentElement.setAttribute("data-theme", "light");
-    }
+    const saved = localStorage.getItem("ding-theme");
+    const initial = saved
+      ? saved === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute(
+      "data-theme",
+      initial ? "dark" : "light"
+    );
+    setDark(initial);
   }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    localStorage.setItem("ding-theme", nextTheme);
-    document.documentElement.setAttribute("data-theme", nextTheme);
-  };
+  function toggle() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.setAttribute(
+      "data-theme",
+      next ? "dark" : "light"
+    );
+    localStorage.setItem("ding-theme", next ? "dark" : "light");
+  }
 
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      className="btn btn-ghost text-xs"
-      style={{ padding: "6px 12px", border: "1px solid var(--color-border-subtle)" }}
-      title={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
-      aria-label="Cambiar tema"
+      onClick={toggle}
+      className="w-9 h-9 flex items-center justify-center border border-gray hover:border-teal transition-colors text-muted hover:text-teal"
+      title={dark ? "Modo claro" : "Modo oscuro"}
     >
-      <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} className="text-primary text-sm" />
-      <span className="hidden sm:inline font-medium">
-        {theme === "light" ? "Oscuro" : "Claro"}
-      </span>
+      <FontAwesomeIcon icon={dark ? faSun : faMoon} className="text-sm" />
     </button>
   );
 }

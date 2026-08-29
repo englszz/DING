@@ -9,6 +9,7 @@ import { UsernameEditor } from "@/components/UsernameEditor";
 import { AvatarEditor } from "@/components/AvatarEditor";
 import { BioEditor } from "@/components/BioEditor";
 import { SocialEditor } from "@/components/SocialEditor";
+import { DeleteRatingButton } from "@/components/DeleteRatingButton";
 
 export default async function ProfilePage({
   params,
@@ -130,6 +131,7 @@ export default async function ProfilePage({
                   instagramUrl={profile.instagram_url}
                   twitterUrl={profile.twitter_url}
                   facebookUrl={profile.facebook_url}
+                  editable={isOwnProfile}
                 />
                 {isOwnProfile && (
                   <PrivacyToggle currentPrivacy={profile.privacy} />
@@ -187,7 +189,17 @@ export default async function ProfilePage({
       </div>
 
       {/* Rated Albums */}
-      <h2 className="section-title">Álbumes Calificados</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="section-title" style={{ marginBottom: 0 }}>
+          Álbumes Calificados
+        </h2>
+        <Link
+          href={`/profile/${username}/statistics`}
+          className="btn btn-outline text-xs"
+        >
+          Ver estadísticas
+        </Link>
+      </div>
 
       {totalRated === 0 ? (
         <div className="card p-12 text-center">
@@ -203,45 +215,51 @@ export default async function ProfilePage({
             const album = r.albums as any;
             if (!album) return null;
             return (
-              <Link
-                key={r.id}
-                href={`/album/${album.id}`}
-                className="card-album group"
-              >
-                <div className="w-full aspect-square bg-[var(--color-surface-alt)] flex items-center justify-center relative border-b border-[var(--color-border)] overflow-hidden">
-                  {album.cover_url ? (
-                    <Image
-                      src={album.cover_url}
-                      alt={album.title}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 relative opacity-40">
+              <div key={r.id} className="relative">
+                <Link
+                  href={`/album/${album.id}`}
+                  className="card-album group block"
+                >
+                  <div className="w-full aspect-square bg-[var(--color-surface-alt)] flex items-center justify-center relative border-b border-[var(--color-border)] overflow-hidden">
+                    {album.cover_url ? (
                       <Image
-                        src="/assets/icon-blue.png"
-                        alt=""
+                        src={album.cover_url}
+                        alt={album.title}
                         fill
-                        sizes="64px"
-                        className="object-contain"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-cover"
                       />
+                    ) : (
+                      <div className="w-16 h-16 relative opacity-40">
+                        <Image
+                          src="/assets/icon-blue.png"
+                          alt=""
+                          fill
+                          sizes="64px"
+                          className="object-contain"
+                        />
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 right-2 rating-badge">
+                      <FontAwesomeIcon icon={faStar} className="text-xs mr-1" />
+                      {Number(r.rating).toFixed(1)}
                     </div>
-                  )}
-                  <div className="absolute bottom-2 right-2 rating-badge">
-                    <FontAwesomeIcon icon={faStar} className="text-xs mr-1" />
-                    {Number(r.rating).toFixed(1)}
                   </div>
-                </div>
-                <div className="p-4">
-                  <p className="font-display font-semibold text-[var(--color-text)] text-base truncate">
-                    {album.title}
-                  </p>
-                  <p className="text-muted text-xs truncate mt-0.5 font-medium">
-                    {album.artist_name}
-                  </p>
-                </div>
-              </Link>
+                  <div className="p-4">
+                    <p className="font-display font-semibold text-[var(--color-text)] text-base truncate">
+                      {album.title}
+                    </p>
+                    <p className="text-muted text-xs truncate mt-0.5 font-medium">
+                      {album.artist_name}
+                    </p>
+                  </div>
+                </Link>
+                {isOwnProfile && (
+                  <div className="absolute top-2 right-2 z-10 w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                    <DeleteRatingButton ratingId={r.id} />
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
