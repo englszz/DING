@@ -25,6 +25,8 @@ type CommentRow = {
   profiles: any;
 };
 
+type ThreadNode = CommentRow & { children: ThreadNode[] };
+
 function normalizeProfile(p: any) {
   if (!p) return null;
   return Array.isArray(p) ? p[0] : p;
@@ -68,6 +70,7 @@ export function ReviewComments({
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState("");
   const [replyParentId, setReplyParentId] = useState<string | null>(null);
+  const [replyParentName, setReplyParentName] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submittingReply, setSubmittingReply] = useState(false);
@@ -90,9 +93,8 @@ export function ReviewComments({
   useEffect(() => {
     let active = true;
     async function load() {
-      const data = await loadComments();
+      await loadComments();
       if (active) setLoading(false);
-      return data;
     }
     load();
     return () => {
@@ -100,19 +102,20 @@ export function ReviewComments({
     };
   }, [loadComments]);
 
-  // Group replies under their top-level comment
-  const { topLevel, repliesByParent } = useMemo(() => {
-    const topLevel: CommentRow[] = [];
-    const repliesByParent: Record<string, CommentRow[]> = {};
-    for (const c of rows) {
-      if (!c.parent_id) {
-        topLevel.push(c);
+  // Build a nested thread tree from the flat rowns
+  const thread = useMemo(() => {
+    const nodes = new Map<string, ThreadNode>();
+    const roots: ThreadNode[] = [];
+    rows.forEach((c) => nodes.set(c.id, { ...c, children: [] }));
+    rows.forEach((c) => {
+      const node = nodes.get(c.id)!;
+      if (c.parent_id && nodes.has(c.parent_id)) {
+        nodes.get(c.parent_id)!.children.push(node);
       } else {
-        const anchor = c.parent_id;
-        (repliesByParent[anchor] = repliesByParent[anchor] || []).push(c);
+        roots.push(node);
       }
-    }
-    return { topLevel, repliesByParent };
+    });
+    return roots;
   }, [rows]);
 
   // Visible comments: public profiles + own
@@ -153,6 +156,7 @@ export function ReviewComments({
       await addReviewComment(ratingId, trimmed, parentId);
       setReplyText("");
       setReplyParentId(null);
+      setReplyParentName(null);
       await loadComments();
     } catch (e: any) {
       setErrorReply(e.message || "Error al enviar la respuesta");
@@ -170,9 +174,131 @@ export function ReviewComments({
     }
   }
 
+  function handleStartReply(node: ThreadNode, profile: any) {
+    setReplyParentId(node.id);
+    setReplyParentName(profile.display_name || `@${profile.username}`);
+    setReplyText("");
+    setErrorReply(null);
+  }
+
+  function renderComment(node: ThreadNode, depth: number) {
+    const p = normalizeProfile(node.profiles);
+    if (!p || !isVisible(p)) {
+      // Keep rendering descendants even if this comment is hidden
+      return (
+        <div key={node.id} className="flex flex-col gap-6">
+          {node.children.map((child) => renderComment(child, depth))}
+        </div>
+      );
+    }
+    const isOwn = p.id === currentUserId;
+    const showReplyForm = replyParentId === node.id;
+    const indent = depth === 0 ? "" : "ml-3 sm:ml-6 border-l-2 border-[var(--color-border)] pl-3 sm:pl-6";
+
+    return (
+      <div key={node.id} className={indent}>
+        <div className="flex gap-4">
+          <Avatar profile={p} size={depth === 0 ? 40 : 34} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <Link
+                href={`/profile/${p.username}`}
+                className="text-sm font-bold text-[var(--color-text)] hover:text-teal transition-colors"
+              >
+                {p.display_name || p.username}
+              </Link>
+              <span className="text-muted text-xs">
+                {formatDate(node.created_at)}
+              </span>
+            </div>
+            <p className="text-sm sm:text-base text-[var(--color-text)] mt-2 leading-relaxed">
+              {node.content}
+            </p>
+            <div className="flex items-center gap-5 mt-3">
+              <button
+                type="button"
+                onClick={() => handleStartReply(node, p)}
+                className="text-teal text-xs font-bold hover:opacity-80 transition-opacity"
+              >
+                <FontAwesomeIcon icon={faReply} className="mr-1.5" />
+                Responder
+              </button>
+              {isOwn && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(node.id)}
+                  className="text-muted text-xs hover:text-red-500 transition-colors"
+                >
+                  <FontAwesomeIcon icon={faTrash} className="mr-1.5" />
+                  Eliminar
+                </button>
+              )}
+            </div>
+
+            {/* Inline reply form */}
+            {showReplyForm && (
+              <div className="mt-4 card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-[var(--color-text)]">
+                    Responder a{" "}
+                    <span className="text-teal">{replyParentName}</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReplyParentId(null);
+                      setReplyParentName(null);
+                      setReplyText("");
+                      setErrorReply(null);
+                    }}
+                    className="text-muted hover:text-[var(--color-text)]"
+                  >
+                    <FontAwesomeIcon icon={faX} className="text-sm" />
+                  </button>
+                </div>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  className="form-input"
+                  rows={3}
+                  placeholder="Escribe una respuesta..."
+                />
+                {errorReply && (
+                  <p className="text-red-500 text-xs mt-2">{errorReply}</p>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => handleReply(node.id)}
+                    disabled={submittingReply || !replyText.trim()}
+                    className="btn btn-outline text-xs"
+                  >
+                    {submittingReply ? (
+                      <FontAwesomeIcon icon={faSpinner} spin />
+                    ) : (
+                      <FontAwesomeIcon icon={faPaperPlane} />
+                    )}
+                    <span>Responder</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Replies */}
+            {node.children.length > 0 && (
+              <div className="flex flex-col gap-6 mt-6">
+                {node.children.map((child) => renderComment(child, depth + 1))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
+      <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
         <p className="text-muted text-xs">
           <FontAwesomeIcon icon={faSpinner} spin className="mr-1" /> Cargando
           comentarios...
@@ -190,161 +316,12 @@ export function ReviewComments({
 
       {/* Comment list */}
       {rows.length === 0 ? (
-        <p className="text-muted text-sm mb-5">
+        <p className="text-muted text-sm mb-6">
           Sé el primero en comentar esta reseña.
         </p>
       ) : (
         <div className="flex flex-col gap-8">
-          {topLevel.map((c) => {
-            const p = normalizeProfile(c.profiles);
-            if (!isVisible(p)) return null;
-            const replies = (repliesByParent[c.id] || []).filter((r) =>
-              isVisible(normalizeProfile(r.profiles))
-            );
-            const isOwn = p.id === currentUserId;
-            return (
-              <div key={c.id} className="flex gap-4">
-                <Avatar profile={p} size={40} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-3 flex-wrap">
-                    <Link
-                      href={`/profile/${p.username}`}
-                      className="text-sm font-bold text-[var(--color-text)] hover:text-teal transition-colors"
-                    >
-                      {p.display_name || p.username}
-                    </Link>
-                    <span className="text-muted text-xs">
-                      {formatDate(c.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm sm:text-base text-[var(--color-text)] mt-2 leading-relaxed">
-                    {c.content}
-                  </p>
-                  <div className="flex items-center gap-5 mt-3">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReplyParentId(
-                          replyParentId === c.id ? null : c.id
-                        )
-                      }
-                      className="text-teal text-xs font-bold hover:opacity-80 transition-opacity"
-                    >
-                      <FontAwesomeIcon icon={faReply} className="mr-1.5" />
-                      Responder
-                    </button>
-                    {isOwn && (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(c.id)}
-                        className="text-muted text-xs hover:text-red-500 transition-colors"
-                      >
-                        <FontAwesomeIcon icon={faTrash} className="mr-1.5" />
-                        Eliminar
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Reply form inline */}
-                  {replyParentId === c.id && (
-                    <div className="mt-4 card p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-bold text-[var(--color-text)]">
-                          Responder a{" "}
-                          <span className="text-teal">
-                            {p.display_name || `@${p.username}`}
-                          </span>
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReplyParentId(null);
-                            setReplyText("");
-                            setErrorReply(null);
-                          }}
-                          className="text-muted hover:text-[var(--color-text)]"
-                        >
-                          <FontAwesomeIcon icon={faX} className="text-sm" />
-                        </button>
-                      </div>
-                      <textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        className="form-input"
-                        rows={3}
-                        placeholder="Escribe una respuesta..."
-                      />
-                      {errorReply && (
-                        <p className="text-red-500 text-xs mt-2">
-                          {errorReply}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-3">
-                        <button
-                          type="button"
-                          onClick={() => handleReply(c.id)}
-                          disabled={submittingReply || !replyText.trim()}
-                          className="btn btn-outline text-xs"
-                        >
-                          {submittingReply ? (
-                            <FontAwesomeIcon icon={faSpinner} spin />
-                          ) : (
-                            <FontAwesomeIcon icon={faPaperPlane} />
-                          )}
-                          <span>Responder</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Nested replies */}
-                  {replies.length > 0 && (
-                    <div className="flex flex-col gap-6 mt-5 ml-3 sm:ml-6 border-l-2 border-[var(--color-border)] pl-4 sm:pl-6">
-                      {replies.map((r) => {
-                        const rp = normalizeProfile(r.profiles);
-                        if (!rp) return null;
-                        const isReplyOwn = rp.id === currentUserId;
-                        return (
-                          <div key={r.id} className="flex gap-3">
-                            <Avatar profile={rp} size={32} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-baseline gap-3 flex-wrap">
-                                <Link
-                                  href={`/profile/${rp.username}`}
-                                  className="text-sm font-bold text-[var(--color-text)] hover:text-teal transition-colors"
-                                >
-                                  {rp.display_name || rp.username}
-                                </Link>
-                                <span className="text-muted text-xs">
-                                  {formatDate(r.created_at)}
-                                </span>
-                              </div>
-                              <p className="text-sm sm:text-base text-[var(--color-text)] mt-1.5 leading-relaxed">
-                                {r.content}
-                              </p>
-                              {isReplyOwn && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(r.id)}
-                                  className="text-muted text-xs mt-2 hover:text-red-500 transition-colors"
-                                >
-                                  <FontAwesomeIcon
-                                    icon={faTrash}
-                                    className="mr-1.5"
-                                  />
-                                  Eliminar
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {thread.map((node) => renderComment(node, 0))}
         </div>
       )}
 
