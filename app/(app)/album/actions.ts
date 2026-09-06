@@ -18,6 +18,14 @@ export async function saveAlbumRating(
   const rounded = Math.round(rating * 10) / 10;
   if (rounded < 0 || rounded > 10) throw new Error("Invalid rating");
 
+  // Check if this is a new rating (first time) or an edit
+  const { data: existing } = await supabase
+    .from("album_ratings")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("album_id", albumId)
+    .single();
+
   const { error } = await supabase.from("album_ratings").upsert(
     {
       user_id: user.id,
@@ -30,24 +38,19 @@ export async function saveAlbumRating(
   );
 
   if (error) throw error;
-  return { success: true };
-}
 
-export async function registerListen(albumId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Rating an album automatically registers a listen (only on first rating)
+  if (!existing) {
+    const { error: listenError } = await supabase
+      .from("listen_log")
+      .insert({
+        user_id: user.id,
+        album_id: albumId,
+        listened_at: new Date().toISOString(),
+      });
+    if (listenError) throw listenError;
+  }
 
-  if (!user) throw new Error("Not authenticated");
-
-  const { error } = await supabase.from("listen_log").insert({
-    user_id: user.id,
-    album_id: albumId,
-    listened_at: new Date().toISOString(),
-  });
-
-  if (error) throw error;
   return { success: true };
 }
 
@@ -129,6 +132,51 @@ export async function saveTrackReview(
     },
     { onConflict: "album_rating_id,track_id" }
   );
+
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function addReviewComment(
+  albumRatingId: string,
+  content: string,
+  parentId?: string | null
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error("El comentario no puede estar vacío");
+  if (trimmed.length > 2000) throw new Error("El comentario es demasiado largo");
+
+  const { error } = await supabase.from("review_comments").insert({
+    album_rating_id: albumRatingId,
+    user_id: user.id,
+    content: trimmed,
+    parent_id: parentId || null,
+  });
+
+  if (error) throw error;
+  return { success: true };
+}
+
+export async function deleteReviewComment(commentId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("review_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("user_id", user.id);
 
   if (error) throw error;
   return { success: true };

@@ -10,7 +10,7 @@ import {
   faSpinner,
   faX,
 } from "@fortawesome/free-solid-svg-icons";
-import { saveAlbumRating, registerListen } from "@/app/(app)/album/actions";
+import { saveAlbumRating } from "@/app/(app)/album/actions";
 import { DeleteRatingButton } from "@/components/DeleteRatingButton";
 
 interface Props {
@@ -31,7 +31,6 @@ export function AlbumActions({
   const [rating, setRating] = useState(existingRating?.toString() || "");
   const [review, setReview] = useState(existingReview || "");
   const [saving, setSaving] = useState(false);
-  const [listening, setListening] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const handleSaveRating = async () => {
@@ -53,18 +52,6 @@ export function AlbumActions({
     setSaving(false);
   };
 
-  const handleListen = async () => {
-    setListening(true);
-    try {
-      await registerListen(albumId);
-      setMessage("Escucha registrada");
-      router.refresh();
-    } catch {
-      setMessage("Error al registrar escucha");
-    }
-    setListening(false);
-  };
-
   return (
     <div className="flex flex-col gap-4">
       {/* Action Buttons */}
@@ -79,21 +66,8 @@ export function AlbumActions({
             {existingRating ? "Editar calificación" : "Calificar álbum"}
           </span>
         </button>
-        <div className="flex items-stretch sm:items-center gap-3 sm:gap-4">
-          <button
-            type="button"
-            onClick={handleListen}
-            disabled={listening}
-            className="btn btn-outline text-xs flex-1 sm:flex-none justify-center"
-          >
-            {listening ? (
-              <FontAwesomeIcon icon={faSpinner} spin className="text-teal" />
-            ) : (
-              <FontAwesomeIcon icon={faPlus} className="text-teal" />
-            )}
-            <span>Registrar escucha</span>
-          </button>
-          {deleteRatingId && (
+        {deleteRatingId && (
+          <div className="flex items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="w-11 sm:w-9 flex items-center justify-center bg-accent-2 hover:opacity-90 transition-opacity flex-shrink-0">
               <DeleteRatingButton
                 ratingId={deleteRatingId}
@@ -101,8 +75,8 @@ export function AlbumActions({
                 dark
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Status Message */}

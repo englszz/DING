@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/server";
 import { getAlbumWithTracks } from "@/lib/supabase/queries";
 import { AlbumActions } from "@/components/AlbumActions";
 import { TrackList } from "@/components/TrackList";
+import { BackButton } from "@/components/BackButton";
+import { ReviewComments } from "@/components/ReviewComments";
 
 export default async function AlbumDetailPage({
   params,
@@ -35,6 +37,21 @@ export default async function AlbumDetailPage({
         .single()
     : { data: null };
 
+  // Fetch all ratings for this album (community reviews)
+  const { data: communityRatings } = await supabase
+    .from("album_ratings")
+    .select(
+      "id, rating, review, created_at, profiles(id, username, display_name, avatar_url, privacy)"
+    )
+    .eq("album_id", album.id)
+    .order("updated_at", { ascending: false });
+
+  // Only show reviews from public profiles (plus the viewer's own)
+  const visibleReviews = (communityRatings || []).filter((r) => {
+    const p: any = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+    return p && (p.privacy === "public" || p.id === user?.id);
+  });
+
   // Fetch track ratings from track_ratings table
   const { data: allTrackRatings } = user
     ? await supabase
@@ -55,13 +72,7 @@ export default async function AlbumDetailPage({
   return (
     <div className="page-container py-4 flex-1 w-full max-w-4xl">
       {/* Back link */}
-      <Link
-        href="/search"
-        className="inline-flex items-center gap-2 text-muted text-sm mb-6 hover:text-teal transition-colors"
-      >
-        <FontAwesomeIcon icon={faArrowLeft} className="text-xs" />
-        <span>Volver al buscador</span>
-      </Link>
+      <BackButton label="Volver" />
 
       {/* Album Header */}
       <div className="card p-4 sm:p-6 mb-8 overflow-hidden">
@@ -128,6 +139,69 @@ export default async function AlbumDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Community Reviews */}
+      {visibleReviews.length > 0 && (
+        <>
+          <h2 className="section-title" style={{ marginBottom: "20px" }}>
+            Calificaciones de la comunidad
+          </h2>
+          <div className="flex flex-col gap-5 mb-10">
+            {visibleReviews.map((r) => {
+              const p: any = Array.isArray(r.profiles)
+                ? r.profiles[0]
+                : r.profiles;
+              if (!p) return null;
+              return (
+                <div key={r.id} className="card p-5 sm:p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[var(--color-surface-alt)] border border-[var(--color-border)] overflow-hidden relative flex-shrink-0">
+                      {p.avatar_url ? (
+                        <Image
+                          src={p.avatar_url}
+                          alt={p.display_name || p.username}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-teal font-bold text-lg">
+                          {(p.display_name || p.username || "?").charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/profile/${p.username}`}
+                        className="text-sm font-bold text-[var(--color-text)] hover:text-teal transition-colors truncate block"
+                      >
+                        {p.display_name || p.username}
+                      </Link>
+                      <p className="text-muted text-xs text-teal">
+                        @{p.username}
+                      </p>
+                    </div>
+                    <div className="rating-badge flex-shrink-0">
+                      <FontAwesomeIcon icon={faStar} className="text-xs mr-1" />
+                      {Number(r.rating).toFixed(1)}
+                    </div>
+                  </div>
+                  {r.review && (
+                    <p className="text-sm sm:text-base text-[var(--color-text)] mt-4 italic font-medium leading-relaxed">
+                      &ldquo;{r.review}&rdquo;
+                    </p>
+                  )}
+
+                  <ReviewComments
+                    ratingId={r.id}
+                    currentUserId={user?.id ?? null}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Tracklist with pie chart (client component for live updates) */}
       <TrackList

@@ -115,6 +115,24 @@ export async function deleteAlbumRating(ratingId: string) {
 
   if (!user) throw new Error("Not authenticated");
 
+  // Get the album id first so we can also remove it from the listen diary
+  const { data: rating } = await supabase
+    .from("album_ratings")
+    .select("album_id")
+    .eq("id", ratingId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (rating) {
+    // Remove the album from the user's listen diary
+    const { error: listenError } = await supabase
+      .from("listen_log")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("album_id", rating.album_id);
+    if (listenError) throw listenError;
+  }
+
   // Only delete ratings that belong to the authenticated user
   const { error } = await supabase
     .from("album_ratings")
