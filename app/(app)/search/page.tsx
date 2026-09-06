@@ -129,6 +129,15 @@ export default function SearchPage() {
     setLoadingDiscography(false);
   };
 
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    // Leave discography view when starting a new search
+    if (discographyArtist) {
+      setDiscography(null);
+      setDiscographyArtist(null);
+    }
+  };
+
   const hasQuery = query.trim().length >= 2;
   const isDiscographyView = discographyArtist !== null;
 
@@ -162,7 +171,7 @@ export default function SearchPage() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleQueryChange}
           placeholder="Escribe un álbum, artista o usuario..."
           className="form-input text-base py-3.5"
           style={{ paddingLeft: "52px" }}
