@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,13 +10,13 @@ import {
   faPlus,
   faUser,
   faCompactDisc,
-  faStar,
   faSpinner,
   faUsers,
   faArrowLeft,
   faCrown,
 } from "@fortawesome/free-solid-svg-icons";
 import type { SearchResultAlbum, SearchResultUser } from "@/types";
+import { releaseKinds, releaseKindLabels, type ReleaseKind } from "@/lib/musicbrainz/search";
 
 interface ArtistResult {
   id: string;
@@ -43,99 +43,108 @@ export default function SearchPage() {
   const [loadingDiscography, setLoadingDiscography] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const performSearch = useCallback(
-    async (q: string, type: "albums" | "artists" | "users") => {
-      if (q.trim().length < 2) {
-        setAlbums([]);
-        setUsers([]);
-        setArtists([]);
-        setHasSearched(false);
-        return;
-      }
+  const [kind, setKind] = useState<ReleaseKind>("album");
+  const [error, setError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
+  const resetRequest = () => {
+    abortRef.current?.abort();
+    setError(null);
+    setImportError(null);
+    setAlbums([]);
+    setArtists([]);
+    setUsers([]);
+    setDiscography(null);
+    setHasSearched(false);
+    setIsLoading(false);
+    setLoadingDiscography(false);
+  };
 
-      setIsLoading(true);
+  useEffect(() => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const run = async () => {
+      if (!discographyArtist && query.trim().length < 2) return;
+      setError(null);
+      setHasSearched(false);
+      if (discographyArtist) setLoadingDiscography(true);
+      else setIsLoading(true);
       try {
-        const res = await fetch(
-          `/api/search?q=${encodeURIComponent(q)}&type=${type}`,
-          { signal: controller.signal }
-        );
-        if (!res.ok) throw new Error("Search failed");
+        const res = discographyArtist
+          ? await fetch("/api/search", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ artistId: discographyArtist.id, kind }),
+              signal: controller.signal,
+            })
+          : await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${activeTab}&kind=${kind}`,
+              { signal: controller.signal });
         const data = await res.json();
-        setAlbums(data.albums || []);
-        setUsers(data.users || []);
-        setArtists(data.artists || []);
+        if (!res.ok) throw new Error(data.error || "No pudimos completar la búsqueda.");
+        if (controller.signal.aborted) return;
+        if (discographyArtist) setDiscography(data.albums || []);
+        else {
+          setAlbums(data.albums || []);
+          setUsers(data.users || []);
+          setArtists(data.artists || []);
+        }
         setHasSearched(true);
-      } catch (err: any) {
-        if (err.name !== "AbortError") {
-          setAlbums([]);
-          setUsers([]);
-          setArtists([]);
-          setHasSearched(true);
+      } catch (err: unknown) {
+        if (!controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : "No pudimos conectar. Inténtalo de nuevo.");
         }
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+          setLoadingDiscography(false);
+        }
       }
-    },
-    []
-  );
+    };
+    const timer = setTimeout(run, discographyArtist ? 0 : 400);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [query, activeTab, kind, discographyArtist, retry]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      performSearch(query, activeTab);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [query, activeTab, performSearch]);
-
-  useEffect(() => {
-    if (query.trim().length >= 2) {
-      performSearch(query, activeTab);
-    }
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleViewAlbum = async (mbid: string) => {
-    setImportingMbid(mbid);
+  const handleViewAlbum = async (album: SearchResultAlbum) => {
+    setImportingMbid(album.mbid);
+    setImportError(null);
     try {
       const res = await fetch("/api/album/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mbid }),
+        body: JSON.stringify({ mbid: album.mbid, entityType: album.entityType || "release" }),
       });
-      if (!res.ok) throw new Error("Import failed");
-      const { albumId } = await res.json();
+      const { albumId, error } = await res.json();
+      if (!res.ok) throw new Error(error || "No pudimos abrir el álbum.");
       router.push(`/album/${albumId}`);
-    } catch {
+    } catch (err: unknown) {
+      setImportError(err instanceof Error ? err.message : "No pudimos abrir el álbum.");
+    } finally {
       setImportingMbid(null);
     }
   };
 
-  const handleViewDiscography = async (artist: ArtistResult) => {
+  const handleViewDiscography = (artist: ArtistResult) => {
+    resetRequest();
+    setKind("album");
     setDiscographyArtist(artist);
-    setLoadingDiscography(true);
-    try {
-      const res = await fetch("/api/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artistId: artist.id }),
-      });
-      const data = await res.json();
-      setDiscography(data.albums || []);
-    } catch {
-      setDiscography([]);
-    }
-    setLoadingDiscography(false);
   };
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    resetRequest();
     setQuery(e.target.value);
     // Leave discography view when starting a new search
     if (discographyArtist) {
       setDiscography(null);
       setDiscographyArtist(null);
+      setActiveTab("albums");
+      setKind("album");
     }
+  };
+
+  const changeTab = (tab: "albums" | "artists" | "users") => {
+    if (tab === activeTab) return;
+    resetRequest();
+    setActiveTab(tab);
   };
 
   const hasQuery = query.trim().length >= 2;
@@ -172,7 +181,9 @@ export default function SearchPage() {
           type="text"
           value={query}
           onChange={handleQueryChange}
-          placeholder="Escribe un álbum, artista o usuario..."
+          aria-label="Buscar álbumes, artistas o usuarios"
+          maxLength={200}
+          placeholder={activeTab === "albums" || isDiscographyView ? "Buscar álbum o artista" : "Escribe un artista o usuario..."}
           className="form-input text-base py-3.5"
           style={{ paddingLeft: "52px" }}
         />
@@ -183,7 +194,7 @@ export default function SearchPage() {
         <div className="flex items-center gap-2 sm:gap-4 mb-6 border-b border-[var(--color-border)] pb-4 overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveTab("albums")}
+            onClick={() => changeTab("albums")}
             className={`btn text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === "albums" ? "btn-primary" : "btn-ghost"}`}
           >
             <FontAwesomeIcon icon={faCompactDisc} />
@@ -191,7 +202,7 @@ export default function SearchPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("artists")}
+            onClick={() => changeTab("artists")}
             className={`btn text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === "artists" ? "btn-primary" : "btn-ghost"}`}
           >
             <FontAwesomeIcon icon={faUsers} />
@@ -199,7 +210,7 @@ export default function SearchPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("users")}
+            onClick={() => changeTab("users")}
             className={`btn text-xs sm:text-sm font-medium whitespace-nowrap ${activeTab === "users" ? "btn-primary" : "btn-ghost"}`}
           >
             <FontAwesomeIcon icon={faUser} />
@@ -208,13 +219,35 @@ export default function SearchPage() {
         </div>
       )}
 
+      {(activeTab === "albums" || isDiscographyView) && (
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <label htmlFor="release-kind" className="text-sm text-muted">Tipo de lanzamiento</label>
+          <select id="release-kind" value={kind}
+            onChange={(event) => { resetRequest(); setKind(event.target.value as ReleaseKind); }}
+            className="form-input text-sm" style={{ width: "auto", minWidth: "180px" }}>
+            <optgroup label="Tipos">
+              {releaseKinds.slice(0, 4).map(value => <option key={value} value={value}>{releaseKindLabels[value]}</option>)}
+            </optgroup>
+            <optgroup label="Otros lanzamientos">
+              {releaseKinds.slice(4).map(value => <option key={value} value={value}>{releaseKindLabels[value]}</option>)}
+            </optgroup>
+          </select>
+        </div>
+      )}
+
+      {error && <div role="alert" className="card p-4 mb-4 flex flex-wrap items-center gap-3">
+        <p className="text-sm">{error}</p>
+        <button type="button" className="btn btn-outline text-sm" onClick={() => { resetRequest(); setRetry(value => value + 1); }}>Reintentar</button>
+      </div>}
+      {importError && <p role="alert" className="text-sm mb-4">{importError} Puedes volver a pulsar «Ver álbum».</p>}
+
       {/* Discography View */}
       {isDiscographyView && (
         <div className="mb-6">
           <button
             type="button"
             onClick={() => {
-              setDiscography(null);
+              resetRequest();
               setDiscographyArtist(null);
             }}
             className="btn btn-ghost text-sm mb-4"
@@ -244,7 +277,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {hasQuery && !isLoading && hasSearched && !isDiscographyView && (activeTab === "albums" ? albums.length === 0 : activeTab === "artists" ? artists.length === 0 : users.length === 0) && (
+        {!error && hasQuery && !isLoading && hasSearched && !isDiscographyView && (activeTab === "albums" ? albums.length === 0 : activeTab === "artists" ? artists.length === 0 : users.length === 0) && (
           <p className="text-sm text-muted text-center py-12">
             {activeTab === "albums"
               ? "No se encontraron álbumes."
@@ -271,7 +304,7 @@ export default function SearchPage() {
           <>
             {discography.length === 0 ? (
               <p className="text-sm text-muted text-center py-12">
-                No se encontraron álbumes en la discografía.
+                No se encontraron lanzamientos de este tipo en la discografía.
               </p>
             ) : (
               discography.map((album) => (
@@ -284,6 +317,10 @@ export default function SearchPage() {
               ))
             )}
           </>
+        )}
+
+        {!isDiscographyView && activeTab === "albums" && albums.some(album => album.approximate) && (
+          <p role="status" className="text-sm text-muted">Quizás buscabas… Estas son coincidencias aproximadas.</p>
         )}
 
         {/* Album results */}
@@ -400,8 +437,9 @@ function AlbumCard({
 }: {
   album: SearchResultAlbum;
   importingMbid: string | null;
-  onViewAlbum: (mbid: string) => void;
+  onViewAlbum: (album: SearchResultAlbum) => void;
 }) {
+  const [failedCover, setFailedCover] = useState(false);
   return (
     <div
       key={album.mbid}
@@ -409,9 +447,10 @@ function AlbumCard({
     >
       <div className="flex items-center gap-4">
         <div className="w-14 h-14 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
-          {album.coverUrl ? (
+          {album.coverUrl && !failedCover ? (
             <Image
               src={album.coverUrl}
+              onError={() => setFailedCover(true)}
               alt={album.title}
               fill
               className="object-cover"
@@ -437,8 +476,8 @@ function AlbumCard({
 
       <button
         type="button"
-        onClick={() => onViewAlbum(album.mbid)}
-        disabled={importingMbid === album.mbid}
+        onClick={() => onViewAlbum(album)}
+        disabled={importingMbid !== null}
         className="btn btn-outline text-xs py-2 px-4"
       >
         {importingMbid === album.mbid ? (
@@ -453,5 +492,3 @@ function AlbumCard({
     </div>
   );
 }
-
-

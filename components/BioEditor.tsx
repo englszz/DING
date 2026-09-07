@@ -33,9 +33,9 @@ export function BioEditor({ currentBio }: BioEditorProps) {
 
   if (!editing) {
     return (
-      <div className="mt-2">
+      <div className="mt-3">
         {currentBio ? (
-          <p className="text-[var(--color-text)] text-sm">{currentBio}</p>
+          <p className="text-[var(--color-text)] text-sm leading-relaxed">{currentBio}</p>
         ) : (
           <button
             onClick={() => setEditing(true)}
@@ -48,7 +48,7 @@ export function BioEditor({ currentBio }: BioEditorProps) {
         {currentBio && (
           <button
             onClick={() => setEditing(true)}
-            className="text-muted hover:text-teal transition-colors mt-1"
+            className="text-muted hover:text-teal transition-colors mt-2"
           >
             <FontAwesomeIcon icon={faPenToSquare} className="text-xs" />
           </button>
@@ -58,7 +58,7 @@ export function BioEditor({ currentBio }: BioEditorProps) {
   }
 
   return (
-    <div className="mt-2">
+    <div className="mt-3">
       <textarea
         value={bio}
         onChange={(e) => setBio(e.target.value)}
@@ -68,7 +68,7 @@ export function BioEditor({ currentBio }: BioEditorProps) {
         className="form-input text-sm py-2 resize-none"
       />
       <p className="text-muted text-xs mt-1">{bio.length}/300</p>
-      <div className="flex items-center gap-3 mt-2">
+      <div className="flex items-center gap-3 mt-3">
         <button
           onClick={handleSave}
           disabled={saving}

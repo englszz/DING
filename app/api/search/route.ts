@@ -3,9 +3,12 @@ import { z } from "zod";
 import { searchAlbums, searchArtists, getArtistReleases } from "@/lib/musicbrainz/api";
 import { createClient } from "@/lib/supabase/server";
 
+import { releaseKinds } from "@/lib/musicbrainz/search";
+
 const searchSchema = z.object({
-  q: z.string().min(2).max(200),
+  q: z.string().trim().min(2).max(200),
   type: z.enum(["albums", "users", "artists"]).default("albums"),
+  kind: z.enum(releaseKinds).default("album"),
 });
 
 export async function GET(request: Request) {
@@ -13,13 +16,14 @@ export async function GET(request: Request) {
   const parsed = searchSchema.safeParse({
     q: searchParams.get("q") || "",
     type: searchParams.get("type") || "albums",
+    kind: searchParams.get("kind") || "album",
   });
 
   if (!parsed.success) {
     return NextResponse.json({ albums: [], users: [], artists: [] });
   }
 
-  const { q, type } = parsed.data;
+  const { q, type, kind } = parsed.data;
 
   try {
     if (type === "users") {
@@ -41,7 +45,7 @@ export async function GET(request: Request) {
 
       if (error) {
         console.error("Supabase user search error:", error);
-        return NextResponse.json({ albums: [], users: [], artists: [] });
+        return NextResponse.json({ error: "No pudimos buscar usuarios." }, { status: 502 });
       }
 
       const mapped = (users || []).map((u) => ({
@@ -99,9 +103,11 @@ export async function GET(request: Request) {
     }
 
     // Default: Search Albums via MusicBrainz API
-    const mbAlbums = await searchAlbums(q);
+    const mbAlbums = await searchAlbums(q, kind);
     const albums = mbAlbums.map((a) => ({
       mbid: a.id,
+      entityType: a.entityType,
+      approximate: a.approximate,
       title: a.title,
       artist: a.artist,
       year: a.year,
@@ -110,7 +116,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ albums, users: [], artists: [] });
   } catch (error) {
     console.error("Search API route error:", error);
-    return NextResponse.json({ albums: [], users: [], artists: [] }, { status: 500 });
+    return NextResponse.json({ error: "No pudimos completar la búsqueda. Inténtalo de nuevo." }, { status: 502 });
   }
 }
 
@@ -120,15 +126,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { artistId } = body as { artistId: string };
+    const parsed = z.object({ artistId: z.string().uuid(), kind: z.enum(releaseKinds).default("album") }).safeParse(body);
 
-    if (!artistId) {
+    if (!parsed.success) {
       return NextResponse.json({ error: "artistId is required" }, { status: 400 });
     }
 
-    const releases = await getArtistReleases(artistId);
+    const releases = await getArtistReleases(parsed.data.artistId, parsed.data.kind);
     const albums = releases.map((a) => ({
       mbid: a.id,
+      entityType: a.entityType,
+      approximate: a.approximate,
       title: a.title,
       artist: a.artist,
       year: a.year,
@@ -138,6 +146,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ albums });
   } catch (error) {
     console.error("Artist discography fetch error:", error);
-    return NextResponse.json({ albums: [] }, { status: 500 });
+    return NextResponse.json({ error: "No pudimos cargar la discografía. Inténtalo de nuevo." }, { status: 502 });
   }
 }

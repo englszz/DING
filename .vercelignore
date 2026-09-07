@@ -1,0 +1,4 @@
+.env*
+dev.log
+dev.err.log
+*.tsbuildinfo

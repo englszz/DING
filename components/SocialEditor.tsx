@@ -113,7 +113,7 @@ export function SocialEditor({
 
   if (!editing) {
     return (
-      <div className="inline-flex items-center gap-2 flex-wrap">
+      <div className="inline-flex items-center gap-3 flex-wrap">
         {hasAnyLink ? (
           <>
             {websiteUrl && (

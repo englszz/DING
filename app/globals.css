@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 @font-face {
   font-family: 'HighCruiser';
   src: url('/fonts/HighCruiser.otf') format('opentype');
@@ -6,7 +8,6 @@
   font-display: swap;
 }
 
-@import "tailwindcss";
 
 /* ─────────────────────────────────────────
    SYSTEM DESIGN TOKENS
@@ -48,8 +49,6 @@
 ───────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
   border-radius: 0 !important;
 }
 
@@ -279,3 +278,9 @@ body {
 .bg-surface { background: var(--color-surface); }
 .bg-surface-alt { background: var(--color-surface-alt); }
 .border-gray { border-color: var(--color-border); }
+
+/* Keep landing navigation within narrow mobile screens. */
+@media (max-width: 639px) {
+  .landing-nav-inner { padding-inline: 16px; }
+  .landing-nav-inner .btn { padding: 8px 10px; font-size: 0.75rem; }
+}

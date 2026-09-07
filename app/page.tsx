@@ -9,10 +9,12 @@ import {
   faUserPlus,
   faSearch,
   faPenToSquare,
-  faCheck,
   faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 import { createClient } from "@/lib/supabase/server";
+import { FeaturedAlbums } from "@/components/FeaturedAlbums";
+import { Footer } from "@/components/layout/Footer";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default async function LandingPage() {
@@ -33,9 +35,9 @@ export default async function LandingPage() {
     return (
       <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
         <nav className="nav">
-          <div className="page-container w-full flex items-center justify-between">
+          <div className="page-container landing-nav-inner w-full flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
-              <div className="relative h-8 w-24 sm:h-10 sm:w-32 flex-shrink-0">
+              <div className="relative h-8 w-20 sm:h-10 sm:w-32 flex-shrink-0">
                 <Image src="/assets/logo2.png" alt="DING logo" fill sizes="128px" className="object-contain" priority />
               </div>
             </Link>
@@ -50,21 +52,21 @@ export default async function LandingPage() {
         </nav>
 
         <section
-          className="relative flex flex-col items-center justify-center min-h-[85vh] px-8 sm:px-6 pb-24"
-          style={{ paddingTop: "120px" }}
+          className="relative flex flex-col items-center justify-center px-6 pb-12 sm:pb-14"
+          style={{ paddingTop: "104px" }}
         >
           <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
-            <div className="mb-6 sm:mb-8 flex flex-col items-center">
-              <div className="relative w-20 h-20 sm:w-28 sm:h-28 mx-auto mb-4">
+            <div className="mb-3 sm:mb-4 flex flex-col items-center">
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4">
                 <Image src="/assets/icon-blue.png" alt="DING Star Icon" fill sizes="112px" className="object-contain" priority />
               </div>
             </div>
 
             <h1
               className="font-display text-teal mb-4 sm:mb-6"
-              style={{ fontSize: "clamp(1.8rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
+              style={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)", lineHeight: 1.1 }}
             >
-              Tu diario musical te espEra
+              Tu diario musical te espera
             </h1>
 
             <p className="text-muted max-w-2xl text-sm sm:text-base md:text-lg leading-relaxed px-4 sm:px-6">
@@ -88,8 +90,10 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        <FeaturedAlbums signedIn />
+
         {/* Features */}
-        <section className="py-24 px-6">
+        <section className="py-12 sm:py-16 px-6">
           <div className="page-container">
             <h2 className="section-title">Características Principales</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
@@ -100,28 +104,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* How it works */}
-        <section className="py-24 sm:py-32 px-6">
-          <div className="page-container">
-            <h2 className="section-title">Cómo Funciona</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-              <StepCard icon={faUserPlus} number="1" title="Crea tu cuenta" desc="Regístrate con Google en segundos. Elige tu nombre de usuario y personaliza tu perfil." />
-              <StepCard icon={faSearch} number="2" title="Busca y registra" desc="Encuentra cualquier álbum en MusicBrainz. Registra cada escucha en tu diario personal." />
-              <StepCard icon={faPenToSquare} number="3" title="Califica y comparte" desc="Puntúa álbumes y canciones. Tu diario es tuyo — compártelo con quien quieras." />
-            </div>
-          </div>
-        </section>
-
-        <footer className="py-10 px-6 text-center border-t border-[var(--color-border)] mt-12 bg-[var(--color-surface)]">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative w-56 h-20">
-              <Image src="/assets/íconoazultransparent.png" alt="DING" fill sizes="224px" className="object-contain" />
-            </div>
-          </div>
-          <p className="text-muted text-xs font-medium">
-          Proyecto Personal · Engels Smith Damirón · DING
-        </p>
-      </footer>
+        <Footer />
     </main>
   );
 }
@@ -130,34 +113,34 @@ export default async function LandingPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
       <nav className="nav">
-        <div className="page-container w-full flex items-center justify-between">
+        <div className="page-container landing-nav-inner w-full flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="relative h-8 w-24 sm:h-10 sm:w-32 flex-shrink-0">
+            <div className="relative h-8 w-20 sm:h-10 sm:w-32 flex-shrink-0">
               <Image src="/assets/logo2.png" alt="DING logo" fill sizes="128px" className="object-contain" priority />
             </div>
           </Link>
           <div className="flex items-center gap-2 sm:gap-4 font-medium">
             <ThemeToggle />
-            <Link href="/login" className="btn btn-ghost text-xs sm:text-sm px-2 sm:px-4">Iniciar sesión</Link>
+            <Link href="/login" className="btn btn-ghost text-xs sm:text-sm px-2 sm:px-4"><span className="sm:hidden">Entrar</span><span className="hidden sm:inline">Iniciar sesión</span></Link>
             <Link href="/register" className="btn btn-primary text-xs sm:text-sm px-2 sm:px-4">Crear cuenta</Link>
           </div>
         </div>
       </nav>
 
         <section
-          className="relative flex flex-col items-center justify-center min-h-[85vh] px-8 sm:px-6 pb-24"
-          style={{ paddingTop: "120px" }}
+          className="relative flex flex-col items-center justify-center px-6 pb-12 sm:pb-14"
+          style={{ paddingTop: "104px" }}
         >
         <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
-          <div className="mb-6 sm:mb-8 flex flex-col items-center">
-            <div className="relative w-20 h-20 sm:w-28 sm:h-28 mx-auto mb-4">
+          <div className="mb-3 sm:mb-4 flex flex-col items-center">
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4">
               <Image src="/assets/icon-blue.png" alt="DING Star Icon" fill sizes="112px" className="object-contain" priority />
             </div>
           </div>
 
           <h1
             className="font-display text-teal mb-4 sm:mb-6"
-            style={{ fontSize: "clamp(1.8rem, 6.5vw, 5rem)", lineHeight: 1.1 }}
+            style={{ fontSize: "clamp(1.8rem, 5vw, 3.5rem)", lineHeight: 1.1 }}
           >
             Registra, Califica & Descubre música
           </h1>
@@ -179,8 +162,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      <FeaturedAlbums signedIn={false} />
+
       {/* Features */}
-      <section className="py-24 px-6">
+      <section className="py-12 sm:py-16 px-6">
         <div className="page-container">
           <h2 className="section-title">Características Principales</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
@@ -192,32 +177,23 @@ export default async function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 sm:py-32 px-6">
+      <section className="py-12 sm:py-16 px-6">
         <div className="page-container">
           <h2 className="section-title">Cómo Funciona</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-            <StepCard icon={faUserPlus} number="1" title="Crea tu cuenta" desc="Regístrate con Google en segundos. Elige tu nombre de usuario y personaliza tu perfil." />
-            <StepCard icon={faSearch} number="2" title="Busca y registra" desc="Encuentra cualquier álbum en MusicBrainz. Registra cada escucha en tu diario personal." />
-            <StepCard icon={faPenToSquare} number="3" title="Califica y comparte" desc="Puntúa álbumes y canciones. Tu diario es tuyo — compártelo con quien quieras." />
+            <StepCard icon={faUserPlus} title="Crea tu cuenta" desc="Regístrate con Google en segundos. Elige tu nombre de usuario y personaliza tu perfil." />
+            <StepCard icon={faSearch} title="Busca y registra" desc="Encuentra cualquier álbum en MusicBrainz. Registra cada escucha en tu diario personal." />
+            <StepCard icon={faPenToSquare} title="Califica y comparte" desc="Puntúa álbumes y canciones. Tu diario es tuyo — compártelo con quien quieras." />
           </div>
         </div>
       </section>
 
-      <footer className="py-10 px-6 text-center border-t border-[var(--color-border)] mt-12 bg-[var(--color-surface)]">
-        <div className="flex items-center justify-center mb-4">
-          <div className="relative w-56 h-20">
-            <Image src="/assets/íconoazultransparent.png" alt="DING" fill sizes="224px" className="object-contain" />
-          </div>
-        </div>
-        <p className="text-muted text-xs font-medium">
-          Proyecto Personal · Engels Smith Damirón · DING
-        </p>
-      </footer>
+      <Footer />
     </main>
   );
 }
 
-function FeatureCard({ icon, title, desc }: { icon: any; title: string; desc: string }) {
+function FeatureCard({ icon, title, desc }: { icon: IconDefinition; title: string; desc: string }) {
   return (
     <div className="card text-center">
       <div className="flex justify-center mb-3">
@@ -229,7 +205,7 @@ function FeatureCard({ icon, title, desc }: { icon: any; title: string; desc: st
   );
 }
 
-function StepCard({ icon, number, title, desc }: { icon: any; number: string; title: string; desc: string }) {
+function StepCard({ icon, title, desc }: { icon: IconDefinition; title: string; desc: string }) {
   return (
     <div className="card text-center">
       <div className="flex justify-center mb-3">

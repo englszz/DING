@@ -214,7 +214,7 @@ export function ReviewComments({
             <p className="text-sm sm:text-base text-[var(--color-text)] mt-2 leading-relaxed">
               {node.content}
             </p>
-            <div className="flex items-center gap-5 mt-3">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 mt-4">
               <button
                 type="button"
                 onClick={() => handleStartReply(node, p)}
@@ -266,7 +266,7 @@ export function ReviewComments({
                 {errorReply && (
                   <p className="text-red-500 text-xs mt-2">{errorReply}</p>
                 )}
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-3 mt-4">
                   <button
                     type="button"
                     onClick={() => handleReply(node.id)}
@@ -298,7 +298,7 @@ export function ReviewComments({
 
   if (loading) {
     return (
-      <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
+      <div className="mt-9 pt-7 border-t border-[var(--color-border)]">
         <p className="text-muted text-xs">
           <FontAwesomeIcon icon={faSpinner} spin className="mr-1" /> Cargando
           comentarios...
@@ -308,7 +308,7 @@ export function ReviewComments({
   }
 
   return (
-    <div className="mt-8 pt-6 border-t border-[var(--color-border)]">
+    <div className="mt-9 pt-7 border-t border-[var(--color-border)]">
       <p className="text-sm font-semibold text-muted uppercase tracking-wider mb-6">
         <FontAwesomeIcon icon={faComment} className="mr-1.5" />
         Comentarios ({rows.length})
@@ -336,7 +336,7 @@ export function ReviewComments({
             placeholder="Deja un comentario sobre esta crítica..."
           />
           {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-3 mt-4">
             <button
               type="button"
               onClick={handleSubmit}

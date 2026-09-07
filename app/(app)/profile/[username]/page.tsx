@@ -108,7 +108,7 @@ export default async function ProfilePage({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-3 mt-2">
                 <p className="text-muted text-sm font-medium">
                   @{profile.username}
                 </p>
@@ -119,13 +119,13 @@ export default async function ProfilePage({
               {isOwnProfile ? (
                 <BioEditor currentBio={profile.bio} />
               ) : profile.bio ? (
-                <p className="text-[var(--color-text)] text-sm mt-2">
+                <p className="text-[var(--color-text)] text-sm mt-3 leading-relaxed">
                   {profile.bio}
                 </p>
               ) : null}
 
               {/* Social links + Privacy toggle on mobile */}
-              <div className="flex items-center gap-2 mt-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-3 mt-5">
                 <SocialEditor
                   websiteUrl={profile.website_url}
                   instagramUrl={profile.instagram_url}
@@ -155,14 +155,14 @@ export default async function ProfilePage({
             <div className="hidden md:flex card-alt items-center gap-8 justify-center">
               <div className="text-center">
                 <p className="text-teal text-3xl font-bold">{totalRated}</p>
-                <p className="text-muted text-xs uppercase font-medium">
+                <p className="text-muted text-xs uppercase font-medium mt-1">
                   Álbumes
                 </p>
               </div>
               <div className="w-[1px] h-8 bg-[var(--color-border)]" />
               <div className="text-center">
                 <p className="text-teal text-3xl font-bold">{avgRating}</p>
-                <p className="text-muted text-xs uppercase font-medium">
+                <p className="text-muted text-xs uppercase font-medium mt-1">
                   Promedio
                 </p>
               </div>
@@ -171,17 +171,17 @@ export default async function ProfilePage({
         </div>
 
         {/* Mobile stats - centered, larger */}
-        <div className="md:hidden card-alt mt-4 flex items-center justify-center gap-10">
+        <div className="md:hidden card-alt mt-6 flex items-center justify-center gap-10">
           <div className="text-center">
             <p className="text-teal text-4xl font-bold">{totalRated}</p>
-            <p className="text-muted text-xs uppercase font-medium">
+            <p className="text-muted text-xs uppercase font-medium mt-1">
               Álbumes
             </p>
           </div>
           <div className="w-[1px] h-10 bg-[var(--color-border)]" />
           <div className="text-center">
             <p className="text-teal text-4xl font-bold">{avgRating}</p>
-            <p className="text-muted text-xs uppercase font-medium">
+            <p className="text-muted text-xs uppercase font-medium mt-1">
               Promedio
             </p>
           </div>
@@ -189,13 +189,13 @@ export default async function ProfilePage({
       </div>
 
       {/* Rated Albums */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
         <h2 className="section-title" style={{ marginBottom: 0 }}>
           Álbumes Calificados
         </h2>
         <Link
           href={`/profile/${username}/statistics`}
-          className="btn btn-outline text-xs"
+          className="btn btn-outline text-xs shrink-0"
         >
           Ver estadísticas
         </Link>
@@ -249,7 +249,7 @@ export default async function ProfilePage({
                     <p className="font-display font-semibold text-[var(--color-text)] text-base truncate">
                       {album.title}
                     </p>
-                    <p className="text-muted text-xs truncate mt-0.5 font-medium">
+                    <p className="text-muted text-xs truncate mt-2 font-medium leading-relaxed">
                       {album.artist_name}
                     </p>
                   </div>

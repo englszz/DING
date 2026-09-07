@@ -143,10 +143,10 @@ export default async function AlbumDetailPage({
       {/* Community Reviews */}
       {visibleReviews.length > 0 && (
         <>
-          <h2 className="section-title" style={{ marginBottom: "20px" }}>
+          <h2 className="section-title" style={{ marginBottom: "28px" }}>
             Calificaciones de la comunidad
           </h2>
-          <div className="flex flex-col gap-5 mb-10">
+          <div className="flex flex-col gap-7 mb-12">
             {visibleReviews.map((r) => {
               const p: any = Array.isArray(r.profiles)
                 ? r.profiles[0]
@@ -177,7 +177,7 @@ export default async function AlbumDetailPage({
                       >
                         {p.display_name || p.username}
                       </Link>
-                      <p className="text-muted text-xs text-teal">
+                      <p className="text-muted text-xs text-teal mt-1 leading-relaxed">
                         @{p.username}
                       </p>
                     </div>
@@ -187,7 +187,7 @@ export default async function AlbumDetailPage({
                     </div>
                   </div>
                   {r.review && (
-                    <p className="text-sm sm:text-base text-[var(--color-text)] mt-4 italic font-medium leading-relaxed">
+                    <p className="text-sm sm:text-base text-[var(--color-text)] mt-5 italic font-medium leading-relaxed">
                       &ldquo;{r.review}&rdquo;
                     </p>
                   )}

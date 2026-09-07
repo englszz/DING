@@ -101,6 +101,8 @@ export interface MBSearchResult {
 
 export interface SearchResultAlbum {
   mbid: string;
+  entityType?: "release" | "release-group";
+  approximate?: boolean;
   title: string;
   artist: string;
   year?: string;

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 
 export default function AppLayout({
@@ -17,22 +17,7 @@ export default function AppLayout({
       </main>
 
       {/* ── FOOTER ── */}
-      <footer className="py-10 text-center border-t border-[var(--color-border)] mt-12 bg-[var(--color-surface)]">
-        <div className="flex items-center justify-center mb-3">
-          <div className="relative w-56 h-20">
-            <Image
-              src="/assets/íconoazultransparent.png"
-              alt="DING"
-              fill
-              sizes="224px"
-              className="object-contain"
-            />
-          </div>
-        </div>
-        <p className="text-muted text-xs font-medium">
-          Proyecto Personal · Engels Smith Damirón · DING
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }
