@@ -88,7 +88,7 @@ test("backup lookup keeps ordered songs across discs and refuses partial albums"
     ["First", "Second"],
   );
   mock([album, { kind: "song", collectionId: 123, trackName: "First" }]);
-  await assert.rejects(api.itunesAlbum("123"), /completo/);
+  await assert.rejects(api.itunesAlbum("123"), /todas las canciones/);
 });
 test("backup artist identifiers open their own discography", async () => {
   mock([{ wrapperType: "artist", artistId: 789, artistName: "Artist" }]);
@@ -199,3 +199,18 @@ test('a failed MusicBrainz group import opens a unique backup without inventing 
  const response=await route.POST(new Request('http://localhost/api/album/import',{method:'POST',body:JSON.stringify({mbid:'eac07d92-86b1-4fa7-906d-ec3177f8ebc2',entityType:'release-group',title:'UTOPIA',artist:'Travis Scott',year:'2023'})}));
  assert.equal(response.status,200);assert.deepEqual(await response.json(),{albumId:'backup-album'});assert.ok(calls.includes('ding_import_itunes'));assert.ok(!calls.includes('ding_finish_import'));
 });
+
+test("mixed-media albums accept complete audio discs but reject missing or duplicated songs", async () => {
+  const album = { wrapperType: "collection", collectionId: 1443160553, collectionName: "My Beautiful Dark Twisted Fantasy", artistName: "Kanye West", trackCount: 15 };
+  const songs = Array.from({length:13}, (_,i) => ({kind:"song", collectionId:1443160553, discNumber:1, discCount:2, trackCount:13, trackNumber:i+1, trackName:`Song ${i+1}`}));
+  songs.push({kind:"song", collectionId:1443160553, discNumber:2, discCount:2, trackCount:1, trackNumber:1, trackName:"See Me Now"});
+  mock([album,...songs]);
+  assert.equal((await api.itunesAlbum("1443160553")).tracks.length,14);
+  mock([{...album,trackCount:16},...songs,{kind:"music-video",collectionId:1443160553,discNumber:2,trackNumber:2}]);
+  assert.equal((await api.itunesAlbum("1443160553")).tracks.length,14);
+  for (const incomplete of [songs.slice(1),songs.slice(0,13),[...songs.slice(0,12),songs[0],songs[13]],songs.map(s=>({...s,discCount:undefined}))]) {
+    mock([album,...incomplete]);
+    await assert.rejects(api.itunesAlbum("1443160553"), {name:"IncompleteItunesAlbumError"});
+  }
+});
+

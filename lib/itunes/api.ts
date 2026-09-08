@@ -18,6 +18,7 @@ interface Item {
   trackCount?: number;
   trackNumber?: number;
   discNumber?: number;
+  discCount?: number;
   trackTimeMillis?: number;
 }
 const runtime = globalThis as typeof globalThis & {
@@ -152,6 +153,31 @@ export async function itunesDiscography(id: string, kind: ReleaseKind) {
     kind,
   );
 }
+export class IncompleteItunesAlbumError extends Error {
+  constructor() {
+    super("iTunes no devolvió todas las canciones de esta edición. Prueba otra edición del álbum.");
+    this.name = "IncompleteItunesAlbumError";
+  }
+}
+
+function completeAudioDiscs(tracks: Item[]): boolean {
+  const discCount = tracks[0]?.discCount;
+  if (!Number.isInteger(discCount) || !discCount || discCount < 1) return false;
+  const discs = new Map<number, Item[]>();
+  for (const track of tracks) {
+    const disc = track.discNumber;
+    if (track.discCount !== discCount || !Number.isInteger(disc) || !disc || disc < 1 || disc > discCount) return false;
+    discs.set(disc, [...(discs.get(disc) || []), track]);
+  }
+  if (discs.size !== discCount) return false;
+  return [...discs.values()].every(songs => {
+    const count = songs[0].trackCount;
+    return Number.isInteger(count) && count === songs.length && songs.every((song, index) =>
+      song.trackCount === count && song.trackNumber === index + 1
+    );
+  });
+}
+
 export async function itunesAlbum(id: string) {
   if (!/^\d{1,20}$/.test(id)) throw new Error("Referencia de iTunes inválida");
   const items = await request("lookup", { id, entity: "song", limit: "200" });
@@ -169,11 +195,9 @@ export async function itunesAlbum(id: string) {
     !album?.collectionName ||
     !album.artistName ||
     !tracks.length ||
-    tracks.length !== album.trackCount
+    (tracks.length !== album.trackCount && !completeAudioDiscs(tracks))
   )
-    throw new Error(
-      "El respaldo no devolvió el álbum completo. Inténtalo de nuevo.",
-    );
+    throw new IncompleteItunesAlbumError();
   return {
     title: album.collectionName,
     coverUrl:itunesArtworkUrl(album.artworkUrl100),
