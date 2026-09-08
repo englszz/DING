@@ -52,6 +52,47 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  const [restored, setRestored] = useState(false);
+  const skipRestoredSearch = useRef(false);
+  const restoredScroll = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const raw = window.sessionStorage.getItem("ding-search-return-v1");
+        window.sessionStorage.removeItem("ding-search-return-v1");
+        const saved = raw ? JSON.parse(raw) : null;
+        if (saved && Date.now() - saved.savedAt < 3600000 &&
+          typeof saved.query === "string" && ["albums", "artists", "users"].includes(saved.activeTab) &&
+          releaseKinds.includes(saved.kind) && Array.isArray(saved.albums) &&
+          Array.isArray(saved.artists) && Array.isArray(saved.users) &&
+          (saved.discography === null || Array.isArray(saved.discography))) {
+          setQuery(saved.query);
+          setActiveTab(saved.activeTab);
+          setKind(saved.kind);
+          setAlbums(saved.albums);
+          setArtists(saved.artists);
+          setUsers(saved.users);
+          setDiscography(saved.discography);
+          setDiscographyArtist(saved.discographyArtist);
+          setHasSearched(true);
+          skipRestoredSearch.current = true;
+          restoredScroll.current = Number.isFinite(saved.scrollY) ? saved.scrollY : 0;
+        }
+      } catch { /* Storage may be unavailable; normal search still works. */ }
+      setRestored(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!restored || restoredScroll.current === null) return;
+    const timer = setTimeout(() => {
+      window.scrollTo(0, restoredScroll.current || 0);
+      restoredScroll.current = null;
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [restored]);
 
   const resetRequest = () => {
     abortRef.current?.abort();
@@ -67,6 +108,11 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
+    if (!restored) return;
+    if (skipRestoredSearch.current) {
+      skipRestoredSearch.current = false;
+      return;
+    }
     const controller = new AbortController();
     abortRef.current = controller;
     const run = async () => {
@@ -107,13 +153,19 @@ export default function SearchPage() {
     };
     const timer = setTimeout(run, discographyArtist ? 0 : 550);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, activeTab, kind, discographyArtist, retry]);
+  }, [query, activeTab, kind, discographyArtist, retry, restored]);
 
   const handleViewAlbum = async (album: SearchResultAlbum) => {
     setImportingMbid(album.mbid);
     setImportError(null);
     try {
       const albumId = await openAlbum(album);
+      try {
+        window.sessionStorage.setItem("ding-search-return-v1", JSON.stringify({
+          savedAt: Date.now(), query, activeTab, kind, albums, artists, users,
+          discography, discographyArtist, scrollY: window.scrollY,
+        }));
+      } catch { /* Opening an album must not depend on browser storage. */ }
       router.push(`/album/${albumId}`);
     } catch (err: unknown) {
       setImportError(err instanceof Error ? err.message : "No pudimos abrir el álbum.");
@@ -482,3 +534,4 @@ function AlbumCard({
     </div>
   );
 }
+

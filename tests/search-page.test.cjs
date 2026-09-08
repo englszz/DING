@@ -120,3 +120,31 @@ test("approximate results display a hint without rewriting the query", async () 
   assert.equal(input().value, "Utoipa Travis Scott");
   assert.ok(screen.getByText("UTOPIA"));
 });
+
+test("returning from an album restores search results, filter and scroll without fetching again", async () => {
+  window.sessionStorage.clear();
+  const calls = [];
+  let destination;
+  router.push = value => { destination = value; };
+  window.scrollTo = (x,y) => { window.scrollY = y; };
+  global.fetch = async url => { calls.push(url); return url === "/api/album/import" ? json({albumId:"local-album"}) : json({albums:[album]}); };
+  const view = render(React.createElement(Page));
+  type("Utopia Travis Scott");
+  fireEvent.change(screen.getByRole("combobox"), {target:{value:"ep"}});
+  await screen.findByText("UTOPIA");
+  window.scrollY = 640;
+  fireEvent.click(screen.getByRole("button", {name:"Ver álbum"}));
+  await waitFor(() => assert.equal(destination,"/album/local-album"));
+  view.unmount();
+  window.scrollY = 0;
+  const count = calls.length;
+  render(React.createElement(Page));
+  await screen.findByText("UTOPIA");
+  assert.equal(input().value,"Utopia Travis Scott");
+  assert.equal(screen.getByRole("combobox").value,"ep");
+  await waitFor(() => assert.equal(window.scrollY,640));
+  await new Promise(resolve=>setTimeout(resolve,650));
+  assert.equal(calls.length,count);
+  type("New search");
+  await waitFor(() => assert.equal(calls.length,count+1));
+});
