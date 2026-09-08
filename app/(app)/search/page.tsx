@@ -1,6 +1,10 @@
 "use client";
+import { ItunesBadge } from "@/components/ItunesBadge";
+import { ArtistPortrait } from "@/components/ArtistPortrait";
+import { SaveAlbumButton } from "@/components/AlbumLibrary";
 
 import { useState, useEffect, useRef } from "react";
+import { openAlbum } from "@/lib/albums/open";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,6 +23,7 @@ import type { SearchResultAlbum, SearchResultUser } from "@/types";
 import { releaseKinds, releaseKindLabels, type ReleaseKind } from "@/lib/musicbrainz/search";
 
 interface ArtistResult {
+  source?: "musicbrainz" | "itunes";
   id: string;
   name: string;
   type?: string;
@@ -74,7 +79,7 @@ export default function SearchPage() {
         const res = discographyArtist
           ? await fetch("/api/search", {
               method: "POST", headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ artistId: discographyArtist.id, kind }),
+              body: JSON.stringify({ artistId: discographyArtist.id, artistName: discographyArtist.name, source: discographyArtist.source || "musicbrainz", kind }),
               signal: controller.signal,
             })
           : await fetch(`/api/search?q=${encodeURIComponent(query)}&type=${activeTab}&kind=${kind}`,
@@ -100,7 +105,7 @@ export default function SearchPage() {
         }
       }
     };
-    const timer = setTimeout(run, discographyArtist ? 0 : 400);
+    const timer = setTimeout(run, discographyArtist ? 0 : 550);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [query, activeTab, kind, discographyArtist, retry]);
 
@@ -108,13 +113,7 @@ export default function SearchPage() {
     setImportingMbid(album.mbid);
     setImportError(null);
     try {
-      const res = await fetch("/api/album/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mbid: album.mbid, entityType: album.entityType || "release" }),
-      });
-      const { albumId, error } = await res.json();
-      if (!res.ok) throw new Error(error || "No pudimos abrir el álbum.");
+      const albumId = await openAlbum(album);
       router.push(`/album/${albumId}`);
     } catch (err: unknown) {
       setImportError(err instanceof Error ? err.message : "No pudimos abrir el álbum.");
@@ -337,24 +336,11 @@ export default function SearchPage() {
         {!isDiscographyView && activeTab === "artists" && artists.map((artist) => (
           <div
             key={artist.id}
-            className="card p-4 flex items-center justify-between hover:border-teal transition-colors"
+            className="card p-4 flex flex-wrap gap-4 items-center justify-between hover:border-teal transition-colors"
           >
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                {artist.imageUrl ? (
-                  <Image
-                    src={artist.imageUrl}
-                    alt={artist.name}
-                    fill
-                    sizes="56px"
-                    className="object-cover"
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faUsers}
-                    className="text-accent-2 text-xl"
-                  />
-                )}
+                <ArtistPortrait name={artist.name} hint={artist.disambiguation} />
               </div>
               <div>
                 <p className="font-display font-semibold text-[var(--color-text)] text-base">
@@ -471,9 +457,12 @@ function AlbumCard({
             {album.artist}
             {album.year ? ` · ${album.year}` : ""}
           </p>
+          <ItunesBadge id={album.artworkItunesId || (album.entityType==="itunes"?album.mbid:undefined)} coverUrl={album.coverUrl} />
         </div>
       </div>
 
+      <div className="flex flex-wrap items-start gap-3">
+      <SaveAlbumButton album={album} />
       <button
         type="button"
         onClick={() => onViewAlbum(album)}
@@ -489,6 +478,7 @@ function AlbumCard({
           {importingMbid === album.mbid ? "Cargando..." : "Ver álbum"}
         </span>
       </button>
+      </div>
     </div>
   );
 }

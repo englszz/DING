@@ -1,3 +1,4 @@
+import { ItunesBadge } from "@/components/ItunesBadge";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,6 +27,8 @@ export default async function AlbumDetailPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const { data: group } = await supabase.from("album_groups").select("release_group_id").eq("album_id",album.id).limit(1).maybeSingle();
 
   // Fetch user's album rating
   const { data: userRating } = user
@@ -127,10 +130,12 @@ export default async function AlbumDetailPage({
               )}
             </div>
 
+            <ItunesBadge id={album.artwork_itunes_id} coverUrl={album.cover_url} />
             {/* Actions */}
             <div className="mt-6">
               <AlbumActions
                 albumId={album.id}
+                saveReference={{mbid:group?.release_group_id || (album.external_id.startsWith("itunes:") ? album.external_id.slice(7) : album.external_id),entityType:group ? "release-group" : album.external_id.startsWith("itunes:") ? "itunes" : "release",title:album.title,artist:album.artist_name,coverUrl:album.cover_url || undefined,year:album.release_date || undefined}}
                 existingRating={userRating ? Number(userRating.rating) : null}
                 existingReview={userRating?.review || null}
                 deleteRatingId={userRating?.id}

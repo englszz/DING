@@ -1,6 +1,7 @@
 // ─── Music ─────────────────────────────────────────────────────────────────
 
 export interface Album {
+  artwork_itunes_id?:string | null;
   id: string;
   external_id: string; // MBID
   title: string;
@@ -100,8 +101,10 @@ export interface MBSearchResult {
 // ─── Search ─────────────────────────────────────────────────────────────────
 
 export interface SearchResultAlbum {
+  artworkItunesId?:string;
   mbid: string;
-  entityType?: "release" | "release-group";
+  entityType?: "release" | "release-group" | "itunes";
+  albumId?: string;
   approximate?: boolean;
   title: string;
   artist: string;

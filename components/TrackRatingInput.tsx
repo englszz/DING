@@ -1,10 +1,6 @@
 "use client";
-
-import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { useRef, useState } from "react";
 import { saveTrackRating, deleteTrackRating } from "@/app/(app)/album/actions";
-
 export function TrackRatingInput({
   trackId,
   existingRating,
@@ -14,79 +10,71 @@ export function TrackRatingInput({
   existingRating?: number | null;
   onRatingChange?: (rating: number | null) => void;
 }) {
-  const [rating, setRating] = useState<string>(
-    existingRating !== null && existingRating !== undefined
-      ? existingRating.toFixed(1)
-      : ""
+  const [rating, setRating] = useState(
+    existingRating == null ? "" : String(existingRating),
   );
+  const committed = useRef(
+    existingRating == null ? "" : String(existingRating),
+  );
+  const busy = useRef(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const handleChange = async (val: string) => {
-    if (val === "") {
-      setRating("");
-      setSaving(true);
-      try {
-        await deleteTrackRating(trackId);
-        onRatingChange?.(null);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 1500);
-      } catch {
-        // ignore
-      }
-      setSaving(false);
+  const [message, setMessage] = useState("");
+  async function commit() {
+    if (busy.current) return;
+    const value = rating.trim().replace(",", ".");
+    const num = value === "" ? null : Number(value);
+    if (num !== null && (!Number.isFinite(num) || num < 0 || num > 10)) {
+      setMessage("Usa un número entre 0 y 10");
       return;
     }
-
-    let num = parseFloat(val);
-    if (isNaN(num)) return;
-    if (num > 10) num = 10;
-    if (num < 0) num = 0;
-
-    const rounded = Math.round(num * 10) / 10;
-    const display = rounded.toFixed(1);
+    const rounded = num === null ? null : Math.round(num * 10) / 10;
+    const display = rounded === null ? "" : String(rounded);
     setRating(display);
+    if (display === committed.current) return;
+    busy.current = true;
     setSaving(true);
-    setSaved(false);
-
+    setMessage("");
     try {
-      await saveTrackRating(trackId, rounded);
+      if (rounded === null) await deleteTrackRating(trackId);
+      else await saveTrackRating(trackId, rounded);
+      committed.current = display;
       onRatingChange?.(rounded);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1500);
+      setMessage("Guardado");
     } catch {
-      // Revert on error
+      setMessage("No se guardó. Inténtalo de nuevo.");
+    } finally {
+      busy.current = false;
+      setSaving(false);
     }
-    setSaving(false);
-  };
-
+  }
   return (
-    <div className="flex items-center gap-2">
-      <FontAwesomeIcon
-        icon={faStar}
-        className={`text-xs transition-colors ${rating ? "text-teal" : "text-muted"}`}
-      />
+    <div className="flex flex-col items-end gap-1">
       <input
+        aria-label="Puntuación de la canción"
         type="text"
         inputMode="decimal"
         value={rating}
         onChange={(e) => {
-          const raw = e.target.value;
-          if (/^\d{0,2}(\.\d?)?$/.test(raw) || raw === "") {
-            handleChange(raw);
+          if (/^\d{0,2}([.,]\d?)?$/.test(e.target.value)) {
+            setRating(e.target.value);
+            setMessage("");
+          }
+        }}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.currentTarget.blur();
           }
         }}
         placeholder="—"
         className="form-input text-xs py-1 px-2 text-center"
-        style={{ width: "56px" }}
+        style={{ width: 64 }}
         disabled={saving}
       />
-      {saving && (
-        <FontAwesomeIcon icon={faSpinner} spin className="text-teal text-xs" />
-      )}
-      {saved && (
-        <span className="text-teal text-[10px] font-bold">✓</span>
-      )}
+      <span role="status" className="text-xs text-muted">
+        {saving ? "Guardando…" : message}
+      </span>
     </div>
   );
 }

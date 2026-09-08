@@ -1,3 +1,4 @@
+import { ItunesBadge } from "@/components/ItunesBadge";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -53,7 +54,7 @@ export default async function StatisticsPage({
   const [ratings, listens, trackRates] = await Promise.all([
     supabase
       .from("album_ratings")
-      .select("id, rating, created_at, albums(id, title, artist_name, cover_url)")
+      .select("id, rating, created_at, albums(id, title, artist_name, cover_url, artwork_itunes_id)")
       .eq("user_id", profile.id),
     supabase
       .from("listen_log")
@@ -196,7 +197,7 @@ export default async function StatisticsPage({
             {(() => {
               const a = highest.albums as any;
               return (
-                <Link href={`/album/${a.id}`} className="flex items-center gap-4 group">
+                <div><Link href={`/album/${a.id}`} className="flex items-center gap-4 group">
                   <div className="w-16 h-16 relative overflow-hidden flex-shrink-0 bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
                     {a.cover_url && (
                       <Image src={a.cover_url} alt={a.title} fill sizes="64px" className="object-cover" />
@@ -212,7 +213,7 @@ export default async function StatisticsPage({
                       {Number(highest.rating).toFixed(1)}
                     </p>
                   </div>
-                </Link>
+                </Link><ItunesBadge id={a.artwork_itunes_id} coverUrl={a.cover_url} /></div>
               );
             })()}
           </div>
@@ -224,7 +225,7 @@ export default async function StatisticsPage({
             {(() => {
               const a = lowest.albums as any;
               return (
-                <Link href={`/album/${a.id}`} className="flex items-center gap-4 group">
+                <div><Link href={`/album/${a.id}`} className="flex items-center gap-4 group">
                   <div className="w-16 h-16 relative overflow-hidden flex-shrink-0 bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
                     {a.cover_url && (
                       <Image src={a.cover_url} alt={a.title} fill sizes="64px" className="object-cover" />
@@ -240,7 +241,7 @@ export default async function StatisticsPage({
                       {Number(lowest.rating).toFixed(1)}
                     </p>
                   </div>
-                </Link>
+                </Link><ItunesBadge id={a.artwork_itunes_id} coverUrl={a.cover_url} /></div>
               );
             })()}
           </div>

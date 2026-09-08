@@ -1,5 +1,6 @@
 "use client";
 
+import { openAlbum as importAlbum } from "@/lib/albums/open";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -24,13 +25,8 @@ export function FeaturedAlbums({ signedIn }: { signedIn: boolean }) {
     setOpening(id);
     setError(null);
     try {
-      const response = await fetch("/api/album/import", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mbid: id, entityType: "release-group" }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "No pudimos abrir el álbum. Inténtalo de nuevo.");
-      router.push(`/album/${data.albumId}`);
+      const albumId = await importAlbum({ mbid: id, entityType: "release-group", title:albums.find(a=>a.id===id)?.title,artist:albums.find(a=>a.id===id)?.artist });
+      router.push(`/album/${albumId}`);
     } catch (error) {
       setError(error instanceof Error ? error.message : "No pudimos conectar. Inténtalo de nuevo.");
     } finally { setOpening(null); }

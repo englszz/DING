@@ -16,7 +16,7 @@ export async function saveAlbumRating(
 
   // Validate rating
   const rounded = Math.round(rating * 10) / 10;
-  if (rounded < 0 || rounded > 10) throw new Error("Invalid rating");
+  if (!Number.isFinite(rating) || rating < 0 || rating > 10) throw new Error("Invalid rating");
 
   // Check if this is a new rating (first time) or an edit
   const { data: existing } = await supabase
@@ -63,7 +63,7 @@ export async function saveTrackRating(trackId: string, rating: number) {
   if (!user) throw new Error("Not authenticated");
 
   const rounded = Math.round(rating * 10) / 10;
-  if (rounded < 0 || rounded > 10) throw new Error("Invalid rating");
+  if (!Number.isFinite(rating) || rating < 0 || rating > 10) throw new Error("Invalid rating");
 
   const { error } = await supabase.from("track_ratings").upsert(
     {
@@ -121,7 +121,7 @@ export async function saveTrackReview(
   if (!existing) throw new Error("Not authorized");
 
   const rounded = Math.round(rating * 10) / 10;
-  if (rounded < 0 || rounded > 10) throw new Error("Invalid rating");
+  if (!Number.isFinite(rating) || rating < 0 || rating > 10) throw new Error("Invalid rating");
 
   const { error } = await supabase.from("track_reviews").upsert(
     {

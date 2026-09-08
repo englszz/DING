@@ -26,6 +26,10 @@ function load(file, dependencies = {}) {
 }
 const router = { push() {} };
 const Page = load("app/(app)/search/page.tsx", {
+  "@/components/ItunesBadge": {ItunesBadge:()=>null},
+  "@/components/ArtistPortrait": { ArtistPortrait: () => null },
+  "@/components/AlbumLibrary": { SaveAlbumButton: () => null },
+  "@/lib/albums/open": load("lib/albums/open.ts"),
   "next/navigation": { useRouter: () => router },
   "next/image": ({ src, alt, onError }) => React.createElement("img", { src, alt, onError }),
   "next/link": ({ href, children }) => React.createElement("a", { href }, children),
@@ -105,7 +109,7 @@ test("opening a search result sends its entity type to the importer", async () =
   type("Utopia");
   fireEvent.click(await screen.findByRole("button", { name: "Ver álbum" }));
   await screen.findByRole("alert");
-  assert.deepEqual(body, { mbid: "group-id", entityType: "release-group" });
+  assert.deepEqual(body, { mbid: "group-id", entityType: "release-group", title:"UTOPIA",artist:"Travis Scott" });
 });
 
 test("approximate results display a hint without rewriting the query", async () => {

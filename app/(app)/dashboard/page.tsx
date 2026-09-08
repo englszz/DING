@@ -1,3 +1,4 @@
+import { ItunesBadge } from "@/components/ItunesBadge";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -30,14 +31,14 @@ export default async function DashboardPage() {
   // Fetch rated albums (latest 4 for stats grid)
   const { data: ratings } = await supabase
     .from("album_ratings")
-    .select("id, rating, album_id, updated_at, albums(id, title, artist_name, cover_url)")
+    .select("id, rating, album_id, updated_at, albums(id, title, artist_name, cover_url, artwork_itunes_id)")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
   // Fetch listen log (main content)
   const { data: listens } = await supabase
     .from("listen_log")
-    .select("id, listened_at, album_id, albums(id, title, artist_name, cover_url)")
+    .select("id, listened_at, album_id, albums(id, title, artist_name, cover_url, artwork_itunes_id)")
     .eq("user_id", user.id)
     .order("listened_at", { ascending: false });
 
@@ -127,8 +128,8 @@ export default async function DashboardPage() {
                 const rating = ratingMap.get(entry.album_id);
 
                 return (
+                  <div key={entry.id}>
                   <Link
-                    key={entry.id}
                     href={`/album/${album.id}`}
                     className="card p-4 flex items-center gap-4 hover:border-teal transition-colors overflow-hidden"
                   >
@@ -184,6 +185,8 @@ export default async function DashboardPage() {
                       )}
                     </div>
                   </Link>
+                  <ItunesBadge id={album.artwork_itunes_id} coverUrl={album.cover_url} />
+                  </div>
                 );
               })}
             </div>
@@ -228,8 +231,8 @@ export default async function DashboardPage() {
                   const album = r.albums as any;
                   if (!album) return null;
                   return (
+                    <div key={r.id}>
                     <Link
-                      key={r.id}
                       href={`/album/${album.id}`}
                       className="card p-3 flex items-center gap-3 hover:border-teal transition-colors"
                     >
@@ -261,6 +264,8 @@ export default async function DashboardPage() {
                         {Number(r.rating).toFixed(1)}
                       </div>
                     </Link>
+                    <ItunesBadge id={album.artwork_itunes_id} coverUrl={album.cover_url} />
+                    </div>
                   );
                 })}
               </div>

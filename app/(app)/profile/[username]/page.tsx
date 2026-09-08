@@ -1,3 +1,5 @@
+import { ItunesBadge } from "@/components/ItunesBadge";
+import { SavedAlbums } from "@/components/AlbumLibrary";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,8 +15,10 @@ import { DeleteRatingButton } from "@/components/DeleteRatingButton";
 
 export default async function ProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{tab?:string}>;
 }) {
   const { username } = await params;
   const supabase = await createClient();
@@ -33,6 +37,7 @@ export default async function ProfilePage({
     data: { user },
   } = await supabase.auth.getUser();
   const isOwnProfile = user?.id === profile.id;
+  const savedTab = isOwnProfile && (await searchParams).tab === "saved";
 
   // If profile is private and not own, show restricted view
   if (profile.privacy === "private" && !isOwnProfile) {
@@ -54,7 +59,7 @@ export default async function ProfilePage({
   // Fetch rated albums
   const { data: ratings } = await supabase
     .from("album_ratings")
-    .select("id, rating, album_id, albums(id, title, artist_name, cover_url)")
+    .select("id, rating, album_id, albums(id, title, artist_name, cover_url, artwork_itunes_id)")
     .eq("user_id", profile.id)
     .order("updated_at", { ascending: false });
 
@@ -191,7 +196,7 @@ export default async function ProfilePage({
       {/* Rated Albums */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
         <h2 className="section-title" style={{ marginBottom: 0 }}>
-          Álbumes Calificados
+          {savedTab ? "Álbumes guardados" : "Álbumes calificados"}
         </h2>
         <Link
           href={`/profile/${username}/statistics`}
@@ -201,7 +206,8 @@ export default async function ProfilePage({
         </Link>
       </div>
 
-      {totalRated === 0 ? (
+      {isOwnProfile && <nav aria-label="Tu biblioteca" className="flex flex-wrap gap-3 mb-6"><Link className={`btn ${!savedTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}`} aria-current={!savedTab ? "page" : undefined}>Álbumes calificados</Link><Link className={`btn ${savedTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}?tab=saved`} aria-current={savedTab ? "page" : undefined}>Álbumes guardados · Privados</Link></nav>}
+      {savedTab ? <SavedAlbums /> : totalRated === 0 ? (
         <div className="card p-12 text-center">
           <p className="text-muted text-sm">
             {isOwnProfile
@@ -254,6 +260,7 @@ export default async function ProfilePage({
                     </p>
                   </div>
                 </Link>
+                <ItunesBadge id={album.artwork_itunes_id} coverUrl={album.cover_url} />
                 {isOwnProfile && (
                   <div className="absolute top-2 right-2 z-10 w-8 h-8 bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
                     <DeleteRatingButton ratingId={r.id} />

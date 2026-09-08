@@ -1,3 +1,4 @@
+import { LibraryProvider } from "@/components/AlbumLibrary";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 
@@ -13,7 +14,7 @@ export default function AppLayout({
     >
       <Navbar />
       <main className="flex-1 flex flex-col">
-        {children}
+        <LibraryProvider>{children}</LibraryProvider>
       </main>
 
       {/* ── FOOTER ── */}

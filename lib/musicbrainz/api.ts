@@ -38,45 +38,86 @@ interface Release {
 // Share a queue across route modules in this server process. A distributed
 // deployment should use a shared limiter for all instances using the same IP.
 const runtime = globalThis as typeof globalThis & { dingMusicBrainz?: {
-  queue: Promise<void>; nextRequest: number;
+  queue: Promise<void>; nextRequest: number; active?: number;
   cache: Map<string, { expires: number; data: unknown }>;
   pending: Map<string, Promise<unknown>>;
 } };
 const state = runtime.dingMusicBrainz ??= {
-  queue: Promise.resolve(), nextRequest: 0, cache: new Map(), pending: new Map(),
+  queue: Promise.resolve(), nextRequest: 0, active: 0, cache: new Map(), pending: new Map(),
 };
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function request<T>(path: string, params: Record<string, string> = {}): Promise<T> {
-  const url = `${MUSICBRAINZ_BASE}/${path}?${new URLSearchParams({ ...params, fmt: "json" })}`;
+export class MusicServiceBusyError extends Error {
+  constructor(message = "El servicio musical está ocupado. Inténtalo de nuevo en unos segundos.") { super(message); }
+}
+
+async function request<T>(path: string, params: Record<string, string> = {}, signal?: AbortSignal): Promise<T> {
+  signal?.throwIfAborted();
+  const url = MUSICBRAINZ_BASE + "/" + path + "?" + new URLSearchParams({ ...params, fmt: "json" });
   const cached = state.cache.get(url);
   if (cached && cached.expires > Date.now()) return cached.data as T;
   const pending = state.pending.get(url);
-  if (pending) return pending as Promise<T>;
-  const work = state.queue.then(async () => {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      await sleep(Math.max(0, state.nextRequest - Date.now()));
-      state.nextRequest = Date.now() + 1100;
-      const response = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
-        signal: AbortSignal.timeout(15000), next: { revalidate: 3600 },
-      });
-      if ((response.status === 429 || response.status === 503) && attempt < 2) {
-        const retry = Number(response.headers.get("Retry-After"));
-        state.nextRequest = Date.now() + Math.min(10000, Math.max(2000 * (attempt + 1), (retry || 0) * 1000));
-        continue;
-      }
-      if (!response.ok) throw new Error(`MusicBrainz respondió ${response.status}`);
-      const data: T = await response.json();
-      if (state.cache.size >= 300) state.cache.delete(state.cache.keys().next().value!);
-      state.cache.set(url, { data, expires: Date.now() + 3600000 });
-      return data;
+  if (pending) {
+    try { return await pending as T; }
+    catch (error) {
+      signal?.throwIfAborted();
+      // A previous viewer may have cancelled while this identical request waited.
+      if (error instanceof Error && error.name === "AbortError") return request<T>(path, params, signal);
+      throw error;
     }
-    throw new Error("MusicBrainz no está disponible");
-  });
-  state.queue = work.then(() => undefined, () => undefined);
+  }
+  if (state.pending.size >= 8) throw new MusicServiceBusyError();
+  const started = Date.now();
+  const work = (async () => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const queuedAt = Date.now();
+      // Serialize starts, NOT entire responses/retries. Limit concurrent fetches.
+      const slot = state.queue.then(async () => {
+        while ((state.active || 0) >= 2 || Date.now() < state.nextRequest) {
+          signal?.throwIfAborted();
+          if (Date.now() - queuedAt > 7000) throw new MusicServiceBusyError();
+          await sleep(50);
+        }
+        signal?.throwIfAborted();
+        if (Date.now() - queuedAt > 7000) throw new MusicServiceBusyError();
+        state.active = (state.active || 0) + 1;
+        state.nextRequest = Date.now() + 1100;
+      });
+      state.queue = slot.then(() => undefined, () => undefined);
+      await slot;
+      let retryDelay = 0;
+      try {
+        const response = await fetch(url, {
+          headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+          signal: AbortSignal.timeout(attempt === 0 ? 12000 : 8000), next: { revalidate: 3600 },
+        });
+        if ([429, 502, 503, 504].includes(response.status)) {
+          if (attempt === 1) throw new MusicServiceBusyError();
+          retryDelay = Math.min(5000, Math.max(1100, Number(response.headers.get("Retry-After")) * 1000 || 0));
+          await response.body?.cancel();
+        } else {
+          if (!response.ok) throw new Error("MusicBrainz respondió " + response.status);
+          const data: T = await response.json();
+          if (state.cache.size >= 300) state.cache.delete(state.cache.keys().next().value!);
+          state.cache.set(url, { data, expires: Date.now() + 3600000 });
+          return data;
+        }
+      } catch (error) {
+        if (attempt === 0 && (error instanceof TypeError || (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)))) retryDelay = 1100;
+        else throw error;
+      } finally {
+        state.active = Math.max(0, (state.active || 1) - 1);
+      }
+      if (retryDelay) await sleep(retryDelay);
+    }
+    throw new MusicServiceBusyError();
+  })();
   state.pending.set(url, work);
-  try { return await work; } finally { state.pending.delete(url); }
+  try { return await work; }
+  catch (error) {
+    console.warn("musicbrainz_request_failed", { resource: path.split("/")[0], elapsedMs: Date.now() - started, pending: state.pending.size, reason: error instanceof Error ? error.name : "unknown" });
+    throw error;
+  } finally { state.pending.delete(url); }
 }
 
 function artistName(credits: Credit[] = []): string {
@@ -89,16 +130,16 @@ function mapGroup(group: Group): MusicBrainzRelease {
     coverUrl: `https://coverartarchive.org/release-group/${group.id}/front-250` };
 }
 
-export async function searchAlbums(query: string, kind: ReleaseKind = "album"): Promise<MusicBrainzRelease[]> {
+export async function searchAlbums(query: string, kind: ReleaseKind = "album", signal?: AbortSignal): Promise<MusicBrainzRelease[]> {
   if (query.trim().length < 2) return [];
   const expression = albumQuery(query, kind);
   if (!expression) return [];
-  let data = await request<{ "release-groups": Group[] }>("release-group", { query: expression, limit: "100" });
+  let data = await request<{ "release-groups": Group[] }>("release-group", { query: expression, limit: "100" }, signal);
   let approximate = false;
   if (!(data["release-groups"] || []).some(group => matchesKind(group["primary-type"], group["secondary-types"], kind))) {
     const fallback = approximateAlbumQuery(query, kind);
     if (fallback) {
-      data = await request<{ "release-groups": Group[] }>("release-group", { query: fallback, limit: "100" });
+      data = await request<{ "release-groups": Group[] }>("release-group", { query: fallback, limit: "100" }, signal);
       approximate = true;
     }
   }
@@ -115,15 +156,15 @@ export async function searchAlbums(query: string, kind: ReleaseKind = "album"): 
     .map(group => ({ ...mapGroup(group), approximate }));
 }
 
-export async function searchArtists(query: string): Promise<MusicBrainzArtist[]> {
+export async function searchArtists(query: string, signal?: AbortSignal): Promise<MusicBrainzArtist[]> {
   if (query.trim().length < 2 || !normalize(query)) return [];
-  const data = await request<{ artists: MusicBrainzArtist[] }>("artist", { query: artistQuery(query), limit: "20" });
+  const data = await request<{ artists: MusicBrainzArtist[] }>("artist", { query: artistQuery(query), limit: "20" }, signal);
   return (data.artists || []).sort((a, b) =>
     Number(normalize(b.name) === normalize(query)) - Number(normalize(a.name) === normalize(query)) ||
     Number(b.score || 0) - Number(a.score || 0));
 }
 
-export async function getArtistReleases(artistId: string, kind: ReleaseKind = "album"): Promise<MusicBrainzRelease[]> {
+export async function getArtistReleases(artistId: string, kind: ReleaseKind = "album", signal?: AbortSignal): Promise<MusicBrainzRelease[]> {
   const groups: Group[] = [];
   let count = Infinity;
   while (groups.length < count) {
@@ -131,7 +172,7 @@ export async function getArtistReleases(artistId: string, kind: ReleaseKind = "a
       artist: artistId, inc: "artist-credits", limit: "100", offset: String(groups.length),
       "release-group-status": "website-default",
       ...(kind === "all" ? {} : { type: kind }),
-    });
+    }, signal);
     const page = data["release-groups"] || [];
     if (!page.length) break;
     groups.push(...page);
@@ -144,13 +185,13 @@ export async function getArtistReleases(artistId: string, kind: ReleaseKind = "a
 }
 
 /** Includes every edition so legacy saved releases can be reused unchanged. */
-export async function getGroupEditions(groupId: string): Promise<Release[]> {
+export async function getGroupEditions(groupId: string, signal?: AbortSignal): Promise<Release[]> {
   const releases: Release[] = [];
   let count = Infinity;
   while (releases.length < count) {
     const data = await request<{ releases: Release[]; "release-count": number }>("release", {
       "release-group": groupId, limit: "100", offset: String(releases.length),
-    });
+    }, signal);
     if (!data.releases?.length) break;
     releases.push(...data.releases);
     count = data["release-count"];
@@ -162,8 +203,8 @@ export async function getGroupEditions(groupId: string): Promise<Release[]> {
   return releases.sort((a, b) => rank(b) - rank(a) || (a.date || "9999").localeCompare(b.date || "9999") || a.id.localeCompare(b.id));
 }
 
-export async function getAlbumDetails(mbid: string): Promise<MusicBrainzRelease | null> {
-  const rel = await request<Release>(`release/${mbid}`, { inc: "recordings+artist-credits" });
+export async function getAlbumDetails(mbid: string, signal?: AbortSignal): Promise<MusicBrainzRelease | null> {
+  const rel = await request<Release>(`release/${mbid}`, { inc: "recordings+artist-credits" }, signal);
   const tracks: NonNullable<MusicBrainzRelease["tracks"]> = [];
   for (const medium of rel.media || []) {
     for (const track of medium.tracks || []) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { SaveAlbumButton } from "@/components/AlbumLibrary";
+import type { SearchResultAlbum } from "@/types";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -15,6 +17,7 @@ import { DeleteRatingButton } from "@/components/DeleteRatingButton";
 
 interface Props {
   albumId: string;
+  saveReference: SearchResultAlbum;
   existingRating: number | null;
   existingReview: string | null;
   deleteRatingId?: string;
@@ -22,12 +25,13 @@ interface Props {
 
 export function AlbumActions({
   albumId,
+  saveReference,
   existingRating,
   existingReview,
   deleteRatingId,
 }: Props) {
   const router = useRouter();
-  const [showForm, setShowForm] = useState(!!existingRating);
+  const [showForm, setShowForm] = useState(existingRating !== null);
   const [rating, setRating] = useState(existingRating?.toString() || "");
   const [review, setReview] = useState(existingReview || "");
   const [saving, setSaving] = useState(false);
@@ -45,6 +49,7 @@ export function AlbumActions({
       await saveAlbumRating(albumId, numRating, review);
       setShowForm(false);
       setMessage("Calificación guardada");
+      window.dispatchEvent(new Event("ding-library-changed"));
       router.refresh();
     } catch {
       setMessage("Error al guardar");
@@ -61,11 +66,12 @@ export function AlbumActions({
           onClick={() => setShowForm(!showForm)}
           className="btn btn-primary text-xs w-full sm:w-auto justify-center"
         >
-          <FontAwesomeIcon icon={existingRating ? faPenToSquare : faPlus} />
+          <FontAwesomeIcon icon={existingRating !== null ? faPenToSquare : faPlus} />
           <span>
-            {existingRating ? "Editar calificación" : "Calificar álbum"}
+            {existingRating !== null ? "Editar calificación" : "Calificar álbum"}
           </span>
         </button>
+        {existingRating === null && <SaveAlbumButton album={saveReference} />}
         {deleteRatingId && (
           <div className="flex items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="w-11 sm:w-9 flex items-center justify-center bg-accent-2 hover:opacity-90 transition-opacity flex-shrink-0">
@@ -95,7 +101,7 @@ export function AlbumActions({
         <div className="card p-6 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="font-bold text-sm text-[var(--color-text)]">
-              {existingRating ? "Editar calificación" : "Calificar álbum"}
+              {existingRating !== null ? "Editar calificación" : "Calificar álbum"}
             </p>
             <button
               type="button"

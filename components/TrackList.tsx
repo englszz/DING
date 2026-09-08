@@ -1,5 +1,6 @@
 "use client";
 
+import { TrackComments } from "@/components/TrackComments";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faChartPie } from "@fortawesome/free-solid-svg-icons";
@@ -78,7 +79,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListPro
             return (
               <div
                 key={track.id}
-                className="flex items-center justify-between p-4 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-alt)] transition-colors"
+                className="flex flex-wrap items-center justify-between p-4 border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-surface-alt)] transition-colors"
               >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <span className="text-muted text-sm font-mono w-6 text-center flex-shrink-0">
@@ -110,6 +111,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListPro
                     />
                   )}
                 </div>
+                <TrackComments trackId={track.id} />
               </div>
             );
           })}

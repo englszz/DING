@@ -118,12 +118,15 @@ test("opening a group reuses a saved legacy edition without changing albums or t
     select() { return this; },
     in(column, ids) { seen.push(...ids); return this; },
     order() { return this; },
-    limit() { return Promise.resolve({ data: [{ id: "saved-album" }], error: null }); },
+    limit() { return Promise.resolve({ data: [{ id: "saved-album", external_id: "legacy", tracks: [{id:"track"}] }], error: null }); },
   };
   const route = load("app/api/album/import/route.ts", {
+    "@/lib/musicbrainz/search": search,
+    "@/lib/itunes/api": {itunesAlbum:()=>{throw new Error("Unexpected backup");}},
     "@/lib/supabase/server": { createClient: async () => ({
       auth: { getUser: async () => ({ data: { user: { id: "user" } } }) },
-      from(table) { assert.equal(table, "albums"); return builder; },
+      from(table) { if(table === "album_groups") return {select(){return this;},eq(){return this;},maybeSingle:async()=>({data:null,error:null})}; assert.equal(table, "albums"); return builder; },
+      async rpc(name,args) { if(name === "ding_claim_import") return {data:"token"}; if(name === "ding_finish_import") {assert.equal(args.p_release_id,"legacy");assert.equal(args.p_details,null);return {data:"saved-album"};} return {}; },
     }) },
     "@/lib/musicbrainz/api": {
       getGroupEditions: async () => [{ id: "standard", status: "Official" }, { id: "legacy" }],
@@ -173,4 +176,24 @@ test("low-scoring suggestions are excluded and an empty search stays empty", asy
   mockFetch(() => ({ "release-groups": ++calls === 1 ? [] : [group("weak", "Unrelated", { score: 30 })] }));
   assert.deepEqual(await api.searchAlbums("Unrelated typo"), []);
   assert.equal(calls, 2);
+});
+
+test("identical requests share one fetch and subsequent searches use cached data", async () => {
+ let calls=0;mockFetch(()=>{calls++;return {"release-groups":[group("cached","UTOPIA")]};});
+ const [first,second]=await Promise.all([api.searchAlbums("Utopia"),api.searchAlbums("Utopia")]);
+ assert.deepEqual(first,second);await api.searchAlbums("Utopia");assert.equal(calls,1);
+});
+test("a slow response does not block another request from starting",async()=>{
+ global.dingMusicBrainz.cache.clear();global.dingMusicBrainz.nextRequest=0;
+ let releaseFirst;global.fetch=async url=>{if(new URL(url).searchParams.get("query").includes('slow'))return new Promise(resolve=>{releaseFirst=resolve;});return new Response(JSON.stringify({"release-groups":[group("fast","Fast")]}));};
+ const slow=api.searchAlbums("slow");
+ try {const fast=await api.searchAlbums("fast");assert.equal(fast[0].title,"Fast");}finally{releaseFirst(new Response(JSON.stringify({"release-groups":[group("slow","Slow")]})));await slow;}
+});
+test("a full queue rejects promptly instead of accumulating unbounded work",async()=>{
+ global.dingMusicBrainz.cache.clear();for(let i=0;i<8;i++)global.dingMusicBrainz.pending.set('occupied'+i,Promise.resolve());
+ try{await assert.rejects(api.searchAlbums("overflow"),/ocupado/);}finally{global.dingMusicBrainz.pending.clear();}
+});
+test("cancelled queued searches do not contact MusicBrainz",async()=>{
+ global.dingMusicBrainz.cache.clear();global.dingMusicBrainz.nextRequest=Date.now()+1000;let calls=0;global.fetch=async()=>{calls++;throw Error('Unexpected fetch');};
+ const controller=new AbortController();const work=api.searchAlbums("cancel", "album",controller.signal);controller.abort();await assert.rejects(work,{name:'AbortError'});assert.equal(calls,0);global.dingMusicBrainz.nextRequest=0;
 });

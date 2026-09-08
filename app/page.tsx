@@ -57,7 +57,7 @@ export default async function LandingPage() {
         >
           <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
             <div className="mb-3 sm:mb-4 flex flex-col items-center">
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4">
                 <Image src="/assets/icon-blue.png" alt="DING Star Icon" fill sizes="112px" className="object-contain" priority />
               </div>
             </div>
@@ -133,7 +133,7 @@ export default async function LandingPage() {
         >
         <div className="relative z-10 flex flex-col items-center text-center max-w-4xl">
           <div className="mb-3 sm:mb-4 flex flex-col items-center">
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4">
               <Image src="/assets/icon-blue.png" alt="DING Star Icon" fill sizes="112px" className="object-contain" priority />
             </div>
           </div>

@@ -13,14 +13,16 @@ export async function getAlbumWithTracks(albumId: string) {
     .eq("id", albumId)
     .single();
 
-  if (albumErr || !album) return null;
+  if (albumErr && albumErr.code !== "PGRST116") throw albumErr;
+  if (!album) return null;
 
-  const { data: tracks } = await supabase
+  const { data: tracks, error: tracksError } = await supabase
     .from("tracks")
     .select("*")
     .eq("album_id", albumId)
     .order("track_number", { ascending: true });
 
+  if (tracksError) throw tracksError;
   return { album: album as Album, tracks: (tracks || []) as Track[] };
 }
 
