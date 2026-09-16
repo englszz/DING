@@ -1,4 +1,7 @@
 "use client";
+import { AlbumCover } from "@/components/AlbumCover";
+import { AlbumEditions } from "@/components/AlbumEditions";
+import { defaultAlbumFilters, editionKind, editionLabels, filterAlbums, type AlbumFilters } from "@/lib/albums/search-filters";
 import { ItunesBadge } from "@/components/ItunesBadge";
 import { ArtistPortrait } from "@/components/ArtistPortrait";
 import { SaveAlbumButton } from "@/components/AlbumLibrary";
@@ -35,6 +38,7 @@ interface ArtistResult {
 
 export default function SearchPage() {
   const router = useRouter();
+  const [filters, setFilters] = useState<AlbumFilters>(defaultAlbumFilters);
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"albums" | "artists" | "users">("albums");
   const [albums, setAlbums] = useState<SearchResultAlbum[]>([]);
@@ -60,13 +64,24 @@ export default function SearchPage() {
     const timer = setTimeout(() => {
       try {
         const raw = window.sessionStorage.getItem("ding-search-return-v1");
-        window.sessionStorage.removeItem("ding-search-return-v1");
         const saved = raw ? JSON.parse(raw) : null;
+        const requested = new URLSearchParams(window.location.search);
+        if (requested.get("q") && saved?.urlSearch !== window.location.search) {
+          window.sessionStorage.removeItem("ding-search-return-v1");
+          setQuery(requested.get("q")!.slice(0, 200));
+          setFilters({ ...defaultAlbumFilters, source: requested.get("source") === "itunes" ? "itunes" : "all" });
+          setRestored(true);
+          return;
+        }
+        window.sessionStorage.removeItem("ding-search-return-v1");
         if (saved && Date.now() - saved.savedAt < 3600000 &&
           typeof saved.query === "string" && ["albums", "artists", "users"].includes(saved.activeTab) &&
           releaseKinds.includes(saved.kind) && Array.isArray(saved.albums) &&
           Array.isArray(saved.artists) && Array.isArray(saved.users) &&
           (saved.discography === null || Array.isArray(saved.discography))) {
+          if (saved.filters && typeof saved.filters.artist === "string" && typeof saved.filters.year === "string" &&
+            ["all", ...Object.keys(editionLabels)].includes(saved.filters.edition) &&
+            ["relevance", "newest", "oldest", "title"].includes(saved.filters.sort)) setFilters({ ...defaultAlbumFilters, ...saved.filters, source: ["all", "itunes", "musicbrainz"].includes(saved.filters.source) ? saved.filters.source : "all" });
           setQuery(saved.query);
           setActiveTab(saved.activeTab);
           setKind(saved.kind);
@@ -162,7 +177,7 @@ export default function SearchPage() {
       const albumId = await openAlbum(album);
       try {
         window.sessionStorage.setItem("ding-search-return-v1", JSON.stringify({
-          savedAt: Date.now(), query, activeTab, kind, albums, artists, users,
+          savedAt: Date.now(), urlSearch: window.location.search, query, activeTab, kind, filters, albums, artists, users,
           discography, discographyArtist, scrollY: window.scrollY,
         }));
       } catch { /* Opening an album must not depend on browser storage. */ }
@@ -178,11 +193,13 @@ export default function SearchPage() {
     resetRequest();
     setKind("album");
     setDiscographyArtist(artist);
+    setFilters(defaultAlbumFilters);
   };
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     resetRequest();
     setQuery(e.target.value);
+    setFilters(defaultAlbumFilters);
     // Leave discography view when starting a new search
     if (discographyArtist) {
       setDiscography(null);
@@ -196,10 +213,16 @@ export default function SearchPage() {
     if (tab === activeTab) return;
     resetRequest();
     setActiveTab(tab);
+    setFilters(defaultAlbumFilters);
   };
 
   const hasQuery = query.trim().length >= 2;
   const isDiscographyView = discographyArtist !== null;
+  const availableAlbums = isDiscographyView ? discography || [] : albums;
+  const visibleAlbums = filterAlbums(availableAlbums, filters);
+  const activeFilterCount = [kind !== "album", !!filters.artist, !!filters.year, filters.edition !== "all", filters.source !== "all", filters.sort !== "relevance"].filter(Boolean).length;
+  const filterArtists = [...new Set(availableAlbums.map(album => album.artist))].sort();
+  const filterYears = [...new Set(availableAlbums.flatMap(album => album.year ? [album.year.slice(0, 4)] : []))].sort().reverse();
 
   return (
     <div className="page-container py-4 flex-1 w-full max-w-4xl">
@@ -271,18 +294,60 @@ export default function SearchPage() {
       )}
 
       {(activeTab === "albums" || isDiscographyView) && (
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <label htmlFor="release-kind" className="text-sm text-muted">Tipo de lanzamiento</label>
-          <select id="release-kind" value={kind}
-            onChange={(event) => { resetRequest(); setKind(event.target.value as ReleaseKind); }}
-            className="form-input text-sm" style={{ width: "auto", minWidth: "180px" }}>
-            <optgroup label="Tipos">
-              {releaseKinds.slice(0, 4).map(value => <option key={value} value={value}>{releaseKindLabels[value]}</option>)}
-            </optgroup>
-            <optgroup label="Otros lanzamientos">
-              {releaseKinds.slice(4).map(value => <option key={value} value={value}>{releaseKindLabels[value]}</option>)}
-            </optgroup>
-          </select>
+        <div className="mb-6">
+          <details className="group border-b border-[var(--color-border)]">
+            <summary className="flex flex-wrap items-center gap-2 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-teal">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-teal">
+                <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+              <span className="text-sm font-semibold">Filtrar resultados</span>
+              {activeFilterCount > 0 && <span className="text-teal text-xs">({activeFilterCount} {activeFilterCount === 1 ? "activo" : "activos"})</span>}
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" className="text-muted transition-transform group-open:rotate-180 motion-reduce:transition-none">
+                <path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+              {availableAlbums.length > 0 && <span className="text-muted text-xs ml-auto">{visibleAlbums.length} de {availableAlbums.length} resultados</span>}
+            </summary>
+            <div className="pt-2 pb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <label htmlFor="release-kind" className="text-xs text-muted">Tipo de lanzamiento
+                  <select id="release-kind" value={kind}
+                    onChange={event => { resetRequest(); setKind(event.target.value as ReleaseKind); setFilters(defaultAlbumFilters); }}
+                    className="form-input mt-2">
+                    <optgroup label="Tipos">
+                      {releaseKinds.slice(0, 4).map(value => <option key={value} value={value}>{releaseKindLabels[value]}</option>)}
+                    </optgroup>
+                    <optgroup label="Otros lanzamientos">
+                      {releaseKinds.slice(4).map(value => <option key={value} value={value}>{releaseKindLabels[value]}</option>)}
+                    </optgroup>
+                  </select>
+                </label>
+
+                <label className="text-xs text-muted">Artista exacto<select className="form-input mt-2" value={filters.artist} onChange={e => setFilters({ ...filters, artist: e.target.value })}>
+                  <option value="">Todos los artistas</option>{filterArtists.map(artist => <option key={artist}>{artist}</option>)}
+                </select></label>
+                <label className="text-xs text-muted">Año<select className="form-input mt-2" value={filters.year} onChange={e => setFilters({ ...filters, year: e.target.value })}>
+                  <option value="">Todos los años</option>{filterYears.map(year => <option key={year}>{year}</option>)}
+                </select></label>
+                <label className="text-xs text-muted">Variante indicada<select className="form-input mt-2" value={filters.edition} onChange={e => setFilters({ ...filters, edition: e.target.value })}>
+                  <option value="all">Todas</option>{Object.entries(editionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select></label>
+                <label className="text-xs text-muted">Catálogo<select className="form-input mt-2" value={filters.source} onChange={e => setFilters({ ...filters, source: e.target.value })}>
+                  <option value="all">Ambos catálogos</option><option value="itunes">iTunes · edición digital</option><option value="musicbrainz">MusicBrainz · otras ediciones</option>
+                </select></label>
+                <label className="text-xs text-muted">Ordenar<select className="form-input mt-2" value={filters.sort} onChange={e => setFilters({ ...filters, sort: e.target.value })}>
+                  <option value="relevance">Orden de búsqueda</option><option value="newest">Más recientes</option><option value="oldest">Más antiguos</option><option value="title">Título A–Z</option>
+                </select></label>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+                <p className="text-muted text-xs">Artista, año y variante filtran los resultados cargados.</p>
+                {activeFilterCount > 0 && <button type="button" className="text-teal text-xs underline" onClick={() => {
+                  setFilters(defaultAlbumFilters);
+                  if (kind !== "album") { resetRequest(); setKind("album"); }
+                }}>Limpiar filtros</button>}
+              </div>
+            </div>
+          </details>
+          {availableAlbums.length > 0 && !visibleAlbums.length && <p role="status" className="text-sm mt-4">Ningún resultado coincide con estos filtros. Prueba otro año o limpia los filtros.</p>}
         </div>
       )}
 
@@ -358,7 +423,7 @@ export default function SearchPage() {
                 No se encontraron lanzamientos de este tipo en la discografía.
               </p>
             ) : (
-              discography.map((album) => (
+              visibleAlbums.map((album) => (
                 <AlbumCard
                   key={album.mbid}
                   album={album}
@@ -375,7 +440,7 @@ export default function SearchPage() {
         )}
 
         {/* Album results */}
-        {!isDiscographyView && activeTab === "albums" && albums.map((album) => (
+        {!isDiscographyView && activeTab === "albums" && visibleAlbums.map((album) => (
           <AlbumCard
             key={album.mbid}
             album={album}
@@ -421,7 +486,7 @@ export default function SearchPage() {
         {!isDiscographyView && activeTab === "users" && users.map((user) => (
           <div
             key={user.username}
-            className="card p-4 flex items-center justify-between hover:border-teal transition-colors"
+            className="card p-4 flex flex-wrap items-center justify-between gap-4 hover:border-teal transition-colors"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative overflow-hidden flex-shrink-0">
@@ -477,29 +542,15 @@ function AlbumCard({
   importingMbid: string | null;
   onViewAlbum: (album: SearchResultAlbum) => void;
 }) {
-  const [failedCover, setFailedCover] = useState(false);
+  const [showEditions, setShowEditions] = useState(false);
   return (
     <div
       key={album.mbid}
-      className="card p-4 flex items-center justify-between hover:border-teal transition-colors"
+      className="card p-4 flex flex-wrap items-center justify-between gap-4 hover:border-teal transition-colors"
     >
       <div className="flex items-center gap-4">
         <div className="w-14 h-14 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
-          {album.coverUrl && !failedCover ? (
-            <Image
-              src={album.coverUrl}
-              onError={() => setFailedCover(true)}
-              alt={album.title}
-              fill
-              className="object-cover"
-              sizes="56px"
-            />
-          ) : (
-            <FontAwesomeIcon
-              icon={faCompactDisc}
-              className="text-teal text-xl"
-            />
-          )}
+          <AlbumCover key={`${album.entityType}:${album.mbid}`} album={album} sizes="56px" />
         </div>
         <div>
           <p className="font-display font-semibold text-[var(--color-text)] text-base">
@@ -509,11 +560,14 @@ function AlbumCard({
             {album.artist}
             {album.year ? ` · ${album.year}` : ""}
           </p>
+          <p className="text-muted text-xs mt-2">{album.entityType === "itunes" ? "Edición digital · iTunes" : "MusicBrainz"}{album.trackCount ? ` · ${album.trackCount} canciones` : ""}{album.explicitness === "explicit" ? " · Explícito" : album.explicitness === "cleaned" ? " · Versión censurada" : ""}</p>
+          <p className="text-muted text-xs mt-2">{album.entityType === "release-group" ? "Álbum · varias ediciones" : editionLabels[editionKind(album.title, album.editionDescription)]}</p>
           <ItunesBadge id={album.artworkItunesId || (album.entityType==="itunes"?album.mbid:undefined)} coverUrl={album.coverUrl} />
         </div>
       </div>
 
       <div className="flex flex-wrap items-start gap-3">
+      {album.entityType === "release-group" && <button className="btn btn-ghost text-xs" aria-expanded={showEditions} onClick={() => setShowEditions(!showEditions)}>{showEditions ? "Ocultar ediciones" : "Ver ediciones"}</button>}
       <SaveAlbumButton album={album} />
       <button
         type="button"
@@ -531,6 +585,7 @@ function AlbumCard({
         </span>
       </button>
       </div>
+      {showEditions && <AlbumEditions album={album} onSelect={onViewAlbum} busy={importingMbid !== null} />}
     </div>
   );
 }

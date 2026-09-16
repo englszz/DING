@@ -1,94 +1,30 @@
 "use client";
 
 interface PieChartProps {
-  ratings: Record<number, number>; // e.g., { 0: 0, 1: 0, 2: 0, ..., 10: 5 }
+  ratings: Record<number, number>;
   totalTracks: number;
 }
 
-// Colors matching the design system
-const SLICE_COLORS = [
-  "#262626", // 0
-  "#7f1d1d", // 1
-  "#991b1b", // 2
-  "#b45309", // 3
-  "#a16207", // 4
-  "#4d7c0f", // 5
-  "#15803d", // 6
-  "#0f766e", // 7
-  "#0891b2", // 8
-  "#0097B2", // 9 - teal
-  "#1d4ed8", // 10
-];
-
 export function PieChart({ ratings, totalTracks }: PieChartProps) {
-  const segments: { startAngle: number; endAngle: number; color: string; count: number; label: string }[] = [];
-  let currentAngle = -90; // Start from top
-
-  for (let i = 0; i <= 10; i++) {
-    const count = ratings[i] || 0;
-    if (count === 0) continue;
-
-    const sliceAngle = (count / totalTracks) * 360;
-    segments.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + sliceAngle,
-      color: SLICE_COLORS[i],
-      count,
-      label: `${i}.0`,
-    });
-    currentAngle += sliceAngle;
-  }
-
-  if (segments.length === 0) {
-    return (
-      <div className="card p-6 text-center">
-        <p className="text-muted text-sm font-medium">
-          Sin calificaciones de tracks aún
-        </p>
-      </div>
-    );
-  }
-
-  const size = 180;
-  const center = size / 2;
-  const radius = center - 8;
-
+  const entries = Object.entries(ratings).filter(([, count]) => count > 0).sort(([a], [b]) => Number(b) - Number(a));
+  if (!totalTracks || !entries.length) return <div className="card p-5 text-sm text-muted">Califica tu primera canción para ver cómo se reparten tus notas.</div>;
   return (
-    <div className="flex flex-col items-center gap-4">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {segments.map((seg, idx) => {
-          const startRad = (seg.startAngle * Math.PI) / 180;
-          const endRad = (seg.endAngle * Math.PI) / 180;
-          const x1 = center + radius * Math.cos(startRad);
-          const y1 = center + radius * Math.sin(startRad);
-          const x2 = center + radius * Math.cos(endRad);
-          const y2 = center + radius * Math.sin(endRad);
-          const largeArc = seg.endAngle - seg.startAngle > 180 ? 1 : 0;
-
-          const pathD = [
-            `M ${center} ${center}`,
-            `L ${x1} ${y1}`,
-            `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
-            "Z",
-          ].join(" ");
-
-          return <path key={idx} d={pathD} fill={seg.color} stroke="var(--color-bg)" strokeWidth="2" />;
+    <div className="card p-5">
+      <p className="text-sm font-semibold mb-2">¿Qué notas has puesto?</p>
+      <p className="text-xs text-muted mb-5">Cada barra muestra cuántas canciones tienen esa nota. Los decimales se agrupan en el entero más cercano; por ejemplo, 8.5 cuenta en 9.</p>
+      <ul className="space-y-4" aria-label="Distribución de tus notas por canción">
+        {entries.map(([rating, count]) => {
+          const percent = Math.round(count / totalTracks * 100);
+          return <li key={rating}>
+            <div className="flex flex-wrap justify-between gap-2 text-xs mb-2">
+              <span className="font-semibold">{rating} / 10</span>
+              <span className="text-muted">{count} {count === 1 ? "canción" : "canciones"} · {percent}%</span>
+            </div>
+            <div className="h-2 bg-[var(--color-surface-alt)]" aria-hidden="true"><div className="h-full bg-teal" style={{ width: `${percent}%` }} /></div>
+          </li>;
         })}
-      </svg>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center">
-        {segments.map((seg) => (
-          <div key={seg.label} className="flex items-center gap-1.5 text-xs font-medium">
-            <div
-              className="w-3 h-3 flex-shrink-0"
-              style={{ backgroundColor: seg.color }}
-            />
-            <span className="text-muted">{seg.label}</span>
-            <span className="text-[var(--color-text)]">({seg.count})</span>
-          </div>
-        ))}
-      </div>
+      </ul>
+      <p className="text-xs text-muted mt-5">Sobre {totalTracks} {totalTracks === 1 ? "canción calificada" : "canciones calificadas"}. Las pendientes no cuentan.</p>
     </div>
   );
 }

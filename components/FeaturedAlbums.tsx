@@ -1,7 +1,7 @@
 "use client";
 
 import { openAlbum as importAlbum } from "@/lib/albums/open";
-import Image from "next/image";
+import { AlbumCover as Artwork } from "@/components/AlbumCover";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -61,10 +61,7 @@ export function FeaturedAlbums({ signedIn }: { signedIn: boolean }) {
 }
 
 function AlbumCover({ id, title }: { id: string; title: string }) {
-  const [failed, setFailed] = useState(false);
   return <div className="relative aspect-square w-full bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">
-    {failed ? <div className="absolute inset-0 flex items-center justify-center text-teal text-4xl" aria-label="Portada no disponible">♫</div> :
-      <Image src={`https://coverartarchive.org/release-group/${id}/front-500`} alt={title} fill
-        sizes="(max-width: 767px) 45vw, (max-width: 1023px) 30vw, 180px" className="object-cover" onError={() => setFailed(true)} />}
+    <Artwork album={{ mbid: id, title, entityType: "release-group", coverUrl: `https://coverartarchive.org/release-group/${id}/front-500` }} sizes="(max-width: 767px) 45vw, (max-width: 1023px) 30vw, 180px" />
   </div>;
 }

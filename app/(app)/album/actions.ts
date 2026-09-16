@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveAlbumRating(
@@ -51,6 +52,7 @@ export async function saveAlbumRating(
     if (listenError) throw listenError;
   }
 
+  revalidatePath("/profile/[username]", "page");
   return { success: true };
 }
 
@@ -76,6 +78,7 @@ export async function saveTrackRating(trackId: string, rating: number) {
   );
 
   if (error) throw error;
+  revalidatePath("/profile/[username]", "page");
   return { success: true };
 }
 
@@ -94,6 +97,7 @@ export async function deleteTrackRating(trackId: string) {
     .eq("track_id", trackId);
 
   if (error) throw error;
+  revalidatePath("/profile/[username]", "page");
   return { success: true };
 }
 

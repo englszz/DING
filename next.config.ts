@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
+      { protocol: "https", hostname: "archive.org", pathname: "/download/mbid-*/**" },
+      { protocol: "https", hostname: "*.us.archive.org", pathname: "/download/mbid-*/**" },
+      { protocol: "https", hostname: "*.eu.archive.org", pathname: "/download/mbid-*/**" },
       {protocol:"https",hostname:"is*-ssl.mzstatic.com",pathname:"/image/**"},
       {
         protocol: "https",

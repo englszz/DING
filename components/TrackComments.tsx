@@ -13,6 +13,9 @@ export function TrackComments({ trackId }: { trackId: string }) {
     ReturnType<typeof readTrackComments>
   > | null>(null);
   const [more, setMore] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [notice, setNotice] = useState("");
   async function load(append = false) {
     setBusy(true);
     setError("");
@@ -40,6 +43,9 @@ export function TrackComments({ trackId }: { trackId: string }) {
     setError("");
     try {
       await writeTrackComment(trackId, content);
+      setEditing(false);
+      setConfirmDelete(false);
+      setNotice(content.trim() ? "Comentario guardado." : "Comentario eliminado.");
       await load();
     } catch {
       setError("No se guardó el comentario. Inténtalo de nuevo.");
@@ -88,7 +94,7 @@ export function TrackComments({ trackId }: { trackId: string }) {
               Ver más
             </button>
           )}
-          {data?.signedIn && (
+          {data?.signedIn && (!data.own || editing) && (
             <div className="space-y-3">
               <textarea
                 aria-label="Tu comentario sobre la canción"
@@ -104,22 +110,31 @@ export function TrackComments({ trackId }: { trackId: string }) {
               </p>
               <button
                 className="btn btn-outline text-xs"
-                disabled={busy || !draft.trim()}
+                disabled={busy || !draft.trim() || draft.trim() === data.own}
                 onClick={() => save(draft)}
               >
-                Guardar comentario
+                {busy ? "Guardando…" : data.own ? "Guardar cambios" : "Publicar comentario"}
               </button>
-              {data.own && (
-                <button
-                  className="btn text-xs ml-3"
-                  disabled={busy}
-                  onClick={() => save("")}
-                >
-                  Eliminar
-                </button>
-              )}
+              {editing && <button className="btn text-xs ml-3" disabled={busy} onClick={() => { setDraft(data.own); setEditing(false); setError(""); }}>Cancelar</button>}
             </div>
           )}
+          {data?.own && !editing && (
+            <div className="border-t border-[var(--color-border)] pt-3">
+              <details>
+                <summary className="text-xs text-muted cursor-pointer">Opciones de mi comentario</summary>
+                <div className="flex flex-wrap gap-3 mt-3">
+                  <button className="btn btn-outline text-xs" disabled={busy} onClick={() => { setDraft(data.own); setEditing(true); setConfirmDelete(false); setNotice(""); }}>Editar comentario</button>
+                  <button className="btn text-xs" disabled={busy} onClick={() => setConfirmDelete(true)}>Eliminar comentario</button>
+                </div>
+              </details>
+              {confirmDelete && <div className="card-alt p-3 mt-3">
+                <p className="text-sm mb-3">¿Eliminar tu comentario de esta canción?</p>
+                <button className="btn btn-outline text-xs" disabled={busy} onClick={() => save("")}>Sí, eliminar</button>
+                <button className="btn text-xs ml-3" disabled={busy} onClick={() => setConfirmDelete(false)}>Cancelar</button>
+              </div>}
+            </div>
+          )}
+          {notice && <p role="status" className="text-teal text-xs">{notice}</p>}
           {busy && <p role="status">Cargando…</p>}
           {error && (
             <p role="alert">

@@ -284,3 +284,19 @@ body {
   .landing-nav-inner { padding-inline: 16px; }
   .landing-nav-inner .btn { padding: 8px 10px; font-size: 0.75rem; }
 }
+
+/* Explicit styling avoids the browser's native green progress fill. */
+.album-progress {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border: 0;
+  background: var(--color-surface-alt);
+  color: var(--color-accent-2);
+}
+.album-progress::-webkit-progress-bar { background: var(--color-surface-alt); }
+.album-progress::-webkit-progress-value { background: var(--color-accent-2); }
+.album-progress::-moz-progress-bar { background: var(--color-accent-2); }

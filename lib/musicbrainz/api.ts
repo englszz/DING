@@ -32,7 +32,7 @@ interface Release {
   disambiguation?: string;
   "artist-credit"?: Credit[];
   "cover-art-archive"?: { front?: boolean };
-  media?: Array<{ tracks?: Array<{ position?: number; title?: string; length?: number; recording?: { title?: string; length?: number } }> }>;
+  media?: Array<{ "track-count"?: number; tracks?: Array<{ position?: number; title?: string; length?: number; recording?: { title?: string; length?: number } }> }>;
 }
 
 // Share a queue across route modules in this server process. A distributed
@@ -190,7 +190,7 @@ export async function getGroupEditions(groupId: string, signal?: AbortSignal): P
   let count = Infinity;
   while (releases.length < count) {
     const data = await request<{ releases: Release[]; "release-count": number }>("release", {
-      "release-group": groupId, limit: "100", offset: String(releases.length),
+      "release-group": groupId, inc: "artist-credits", limit: "100", offset: String(releases.length),
     }, signal);
     if (!data.releases?.length) break;
     releases.push(...data.releases);
@@ -203,10 +203,20 @@ export async function getGroupEditions(groupId: string, signal?: AbortSignal): P
   return releases.sort((a, b) => rank(b) - rank(a) || (a.date || "9999").localeCompare(b.date || "9999") || a.id.localeCompare(b.id));
 }
 
+export class IncompleteMusicBrainzAlbumError extends Error {
+  constructor() {
+    super("MusicBrainz no devolvió todas las canciones de esta edición. Prueba la edición digital u otra versión.");
+    this.name = "IncompleteMusicBrainzAlbumError";
+  }
+}
+
 export async function getAlbumDetails(mbid: string, signal?: AbortSignal): Promise<MusicBrainzRelease | null> {
   const rel = await request<Release>(`release/${mbid}`, { inc: "recordings+artist-credits" }, signal);
   const tracks: NonNullable<MusicBrainzRelease["tracks"]> = [];
   for (const medium of rel.media || []) {
+    if (medium["track-count"] !== undefined && medium["track-count"] !== medium.tracks?.length) {
+      throw new IncompleteMusicBrainzAlbumError();
+    }
     for (const track of medium.tracks || []) {
       tracks.push({ position: tracks.length + 1,
         title: track.title || track.recording?.title || `Track ${tracks.length + 1}`,

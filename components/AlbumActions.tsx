@@ -31,7 +31,7 @@ export function AlbumActions({
   deleteRatingId,
 }: Props) {
   const router = useRouter();
-  const [showForm, setShowForm] = useState(existingRating !== null);
+  const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(existingRating?.toString() || "");
   const [review, setReview] = useState(existingReview || "");
   const [saving, setSaving] = useState(false);

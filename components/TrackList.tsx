@@ -3,7 +3,7 @@
 import { TrackComments } from "@/components/TrackComments";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faChartPie } from "@fortawesome/free-solid-svg-icons";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { TrackRatingInput } from "@/components/TrackRatingInput";
 import { PieChart } from "@/components/PieChart";
 
@@ -18,9 +18,10 @@ interface TrackListProps {
   tracks: Track[];
   initialTrackRatings: Record<string, number>;
   isOwner: boolean;
+  hasAlbumRating?: boolean;
 }
 
-export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListProps) {
+export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating = false }: TrackListProps) {
   const [trackRatings, setTrackRatings] = useState<Record<string, number>>(initialTrackRatings);
 
   const handleRatingChange = (trackId: string, rating: number | null) => {
@@ -59,9 +60,9 @@ export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListPro
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Tracklist */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 scroll-mt-8" id="tracklist">
         <h2 className="section-title">
-          Tracklist
+          Canciones
           <span className="text-muted text-sm font-body font-normal ml-2">
             ({tracks.length} canciones)
           </span>
@@ -73,6 +74,12 @@ export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListPro
           )}
         </h2>
 
+        {isOwner && <div className="card-alt p-4 mb-4 text-sm">
+          <p className="font-semibold">{ratedTracks.length} de {tracks.length} canciones calificadas</p>
+          <progress aria-label="Canciones calificadas" value={ratedTracks.length} max={tracks.length || 1} className="album-progress my-2" />
+          <p className="text-muted text-xs">Las notas se guardan al salir de la casilla o pulsar Enter.</p>
+          {ratedTracks.length > 0 && !hasAlbumRating && <p className="text-muted text-xs mt-2">Puedes retomarlo desde «Termina de calificar» en tu perfil. Para completar el álbum, <a href="#album-rating" className="text-teal underline">añade tu calificación general</a>.</p>}
+        </div>}
         <div className="card p-0 overflow-hidden">
           {tracks.map((track) => {
             const currentRating = trackRatings[track.id];
@@ -122,7 +129,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListPro
       <div className="flex flex-col gap-8">
         <div>
           <h2 className="section-title mb-2">
-            Distribución de Ratings
+            Tus notas, de un vistazo
           </h2>
           <div className="mt-6">
             <PieChart ratings={distribution} totalTracks={ratedTracks.length} />
@@ -132,15 +139,16 @@ export function TrackList({ tracks, initialTrackRatings, isOwner }: TrackListPro
         {ratedTracks.length > 0 && (
           <div className="card p-4 text-center">
             <p className="text-muted text-xs font-medium uppercase tracking-wider mb-1">
-              Tracks calificados
+              Promedio de tus canciones
             </p>
             <p className="text-teal text-2xl font-bold">
-              {ratedTracks.length}
+              {avgTrackRating}
               <span className="text-muted text-sm font-normal">
                 {" "}
-                / {tracks.length}
+                / 10
               </span>
             </p>
+            <p className="text-muted text-xs mt-2">Este promedio no sustituye tu calificación general del álbum.</p>
           </div>
         )}
       </div>

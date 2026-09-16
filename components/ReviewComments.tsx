@@ -66,6 +66,7 @@ export function ReviewComments({
   ratingId: string;
   currentUserId?: string | null;
 }) {
+  const [composing, setComposing] = useState(false);
   const [rows, setRows] = useState<CommentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState("");
@@ -140,6 +141,7 @@ export function ReviewComments({
     try {
       await addReviewComment(ratingId, trimmed, null);
       setCommentText("");
+      setComposing(false);
       await loadComments();
     } catch (e: any) {
       setError(e.message || "Error al enviar el comentario");
@@ -325,10 +327,16 @@ export function ReviewComments({
         </div>
       )}
 
+      {error && !composing && <p role="alert" className="text-red-500 text-xs mt-4">{error}</p>}
+
       {/* Top-level comment form */}
-      {currentUserId ? (
+      {currentUserId && !composing ? (
+        <button className="btn btn-outline text-xs mt-6" onClick={() => setComposing(true)}>Escribir un comentario</button>
+      ) : currentUserId ? (
         <div className="mt-6">
           <textarea
+            aria-label="Tu comentario sobre la reseña"
+            maxLength={2000}
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             className="form-input"
@@ -348,8 +356,9 @@ export function ReviewComments({
               ) : (
                 <FontAwesomeIcon icon={faPaperPlane} />
               )}
-              <span>Comentar</span>
+              <span>Publicar comentario</span>
             </button>
+            <button className="btn text-xs" disabled={submitting} onClick={() => { setComposing(false); setCommentText(""); setError(null); }}>Cancelar</button>
           </div>
         </div>
       ) : (

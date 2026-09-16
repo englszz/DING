@@ -26,6 +26,9 @@ function load(file, dependencies = {}) {
 }
 const router = { push() {} };
 const Page = load("app/(app)/search/page.tsx", {
+  "@/components/AlbumCover": { AlbumCover: () => null },
+  "@/components/AlbumEditions": { AlbumEditions: () => null },
+  "@/lib/albums/search-filters": load("lib/albums/search-filters.ts", { "@/lib/musicbrainz/search": load("lib/musicbrainz/search.ts") }),
   "@/components/ItunesBadge": {ItunesBadge:()=>null},
   "@/components/ArtistPortrait": { ArtistPortrait: () => null },
   "@/components/AlbumLibrary": { SaveAlbumButton: () => null },
@@ -60,7 +63,7 @@ test("typing from a pending discography returns to Albums and ignores the late r
   await screen.findByText("UTOPIA");
   assert.ok(screen.getByRole("heading", { name: "Buscador Global" }));
   assert.match(screen.getByRole("button", { name: "Álbumes", exact: true }).className, /btn-primary/);
-  assert.equal(screen.getByRole("combobox").value, "album");
+  assert.equal(screen.getByLabelText("Tipo de lanzamiento").value, "album");
   assert.equal(screen.queryByText("OLD DISCOGRAPHY"), null);
   assert.equal(calls.filter(call => call.url.includes("type=artists")).length, 1);
   assert.equal(calls.find(call => call.method === "POST").signal.aborted, true);
@@ -92,7 +95,7 @@ test("failed searches show Retry, and type selection sends the chosen filter", a
   assert.equal(screen.queryByText("No se encontraron álbumes."), null);
   fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
   await screen.findByText("UTOPIA");
-  fireEvent.change(screen.getByRole("combobox"), { target: { value: "ep" } });
+  fireEvent.change(screen.getByLabelText("Tipo de lanzamiento"), { target: { value: "ep" } });
   await waitFor(() => assert.ok(urls.at(-1).endsWith("kind=ep")));
 });
 
@@ -130,7 +133,7 @@ test("returning from an album restores search results, filter and scroll without
   global.fetch = async url => { calls.push(url); return url === "/api/album/import" ? json({albumId:"local-album"}) : json({albums:[album]}); };
   const view = render(React.createElement(Page));
   type("Utopia Travis Scott");
-  fireEvent.change(screen.getByRole("combobox"), {target:{value:"ep"}});
+  fireEvent.change(screen.getByLabelText("Tipo de lanzamiento"), {target:{value:"ep"}});
   await screen.findByText("UTOPIA");
   window.scrollY = 640;
   fireEvent.click(screen.getByRole("button", {name:"Ver álbum"}));
@@ -141,10 +144,52 @@ test("returning from an album restores search results, filter and scroll without
   render(React.createElement(Page));
   await screen.findByText("UTOPIA");
   assert.equal(input().value,"Utopia Travis Scott");
-  assert.equal(screen.getByRole("combobox").value,"ep");
+  assert.equal(screen.getByLabelText("Tipo de lanzamiento").value,"ep");
   await waitFor(() => assert.equal(window.scrollY,640));
   await new Promise(resolve=>setTimeout(resolve,650));
   assert.equal(calls.length,count);
   type("New search");
   await waitFor(() => assert.equal(calls.length,count+1));
+});
+
+test("filters isolate artist, year and catalog without another network search", async () => {
+  window.sessionStorage.clear();
+  let calls = 0;
+  global.fetch = async () => { calls++; return json({ albums: [
+    { mbid: "digital", entityType: "itunes", title: "BULLY", artist: "Kanye West", year: "2026", trackCount: 18 },
+    { mbid: "archive", entityType: "release-group", title: "BULLY", artist: "Ye", year: "2025" },
+    { mbid: "other", entityType: "itunes", title: "Bully", artist: "Other Artist", year: "2019" },
+  ] }); };
+  render(React.createElement(Page));
+  type("Bully");
+  await screen.findByText("Edición digital · iTunes · 18 canciones");
+  fireEvent.change(screen.getByLabelText("Artista exacto"), { target: { value: "Kanye West" } });
+  fireEvent.change(screen.getByLabelText("Año"), { target: { value: "2026" } });
+  fireEvent.change(screen.getByLabelText("Catálogo"), { target: { value: "itunes" } });
+  assert.equal(screen.getAllByRole("button", { name: "Ver álbum", exact: true }).length, 1);
+  assert.ok(screen.getByText("1 de 3 resultados"));
+  fireEvent.change(screen.getByLabelText("Variante indicada"), { target: { value: "deluxe" } });
+  assert.ok(screen.getByText(/Ningún resultado coincide/));
+  fireEvent.click(screen.getByText("Limpiar filtros"));
+  assert.equal(screen.getAllByRole("button", { name: "Ver álbum", exact: true }).length, 3);
+  assert.equal(calls, 1);
+});
+
+test("explicit digital-edition links override a saved unrelated search", async () => {
+  window.sessionStorage.setItem("ding-search-return-v1", JSON.stringify({
+    savedAt: Date.now(), urlSearch: "", query: "Utopia", activeTab: "albums", kind: "album",
+    albums: [album], artists: [], users: [], discography: null,
+  }));
+  window.history.replaceState({}, "", "/search?q=BULLY&source=itunes");
+  global.fetch = async () => json({ albums: [{ mbid: "digital", entityType: "itunes", title: "BULLY", artist: "Kanye West" }] });
+  try {
+    render(React.createElement(Page));
+    await screen.findByText("BULLY");
+    assert.equal(input().value, "BULLY");
+    assert.equal(screen.getByLabelText("Catálogo").value, "itunes");
+    assert.equal(screen.queryByText("UTOPIA"), null);
+  } finally {
+    window.history.replaceState({}, "", "/");
+    window.sessionStorage.clear();
+  }
 });

@@ -1,3 +1,5 @@
+import { AlbumCover } from "@/components/AlbumCover";
+import { AlbumTopThree } from "@/components/AlbumTopThree";
 import { ItunesBadge } from "@/components/ItunesBadge";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -82,21 +84,7 @@ export default async function AlbumDetailPage({
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
           {/* Cover */}
           <div className="w-32 h-32 sm:w-48 sm:h-48 bg-[var(--color-surface-alt)] border border-[var(--color-border)] flex items-center justify-center relative flex-shrink-0 overflow-hidden">
-            {album.cover_url ? (
-              <Image
-                src={album.cover_url}
-                alt={album.title}
-                fill
-                sizes="(max-width: 640px) 128px, 192px"
-                priority
-                className="object-cover"
-              />
-            ) : (
-              <FontAwesomeIcon
-                icon={faStar}
-                className="text-teal text-4xl opacity-30"
-              />
-            )}
+            <AlbumCover key={album.id} album={{ mbid: album.external_id.replace(/^itunes:/, ""), entityType: album.external_id.startsWith("itunes:") ? "itunes" : "release", title: album.title, coverUrl: album.cover_url }} sizes="(max-width: 640px) 128px, 192px" priority />
             {userRating && (
               <div className="absolute bottom-2 right-2 rating-badge text-xs">
                 <FontAwesomeIcon icon={faStar} className="text-[10px] mr-1" />
@@ -130,9 +118,11 @@ export default async function AlbumDetailPage({
               )}
             </div>
 
+            <p className="text-muted text-xs mt-4">{tracks.length} canciones · {album.external_id.startsWith("itunes:") ? "Edición digital de iTunes" : "Edición de MusicBrainz"}</p>
+            {!album.external_id.startsWith("itunes:") && <p className="text-muted text-xs mt-2">¿La portada o las canciones no coinciden con la versión que escuchaste? <Link className="text-teal underline" href={`/search?q=${encodeURIComponent(album.title + " " + album.artist_name)}&source=itunes`}>Buscar la edición digital</Link>. Tus notas se conservan en esta edición.</p>}
             <ItunesBadge id={album.artwork_itunes_id} coverUrl={album.cover_url} />
             {/* Actions */}
-            <div className="mt-6">
+            <div className="mt-6" id="album-rating">
               <AlbumActions
                 albumId={album.id}
                 saveReference={{mbid:group?.release_group_id || (album.external_id.startsWith("itunes:") ? album.external_id.slice(7) : album.external_id),entityType:group ? "release-group" : album.external_id.startsWith("itunes:") ? "itunes" : "release",title:album.title,artist:album.artist_name,coverUrl:album.cover_url || undefined,year:album.release_date || undefined}}
@@ -144,6 +134,8 @@ export default async function AlbumDetailPage({
           </div>
         </div>
       </div>
+
+      {user && <AlbumTopThree key={`${user.id}:${album.id}`} albumId={album.id} userId={user.id} tracks={tracks} />}
 
       {/* Community Reviews */}
       {visibleReviews.length > 0 && (
@@ -213,6 +205,7 @@ export default async function AlbumDetailPage({
         tracks={tracks}
         initialTrackRatings={trackRatingMap}
         isOwner={!!user}
+        hasAlbumRating={!!userRating}
       />
     </div>
   );

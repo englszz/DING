@@ -1,3 +1,4 @@
+import { mergeCatalogAlbums } from "@/lib/catalog/merge";
 import type { SearchResultAlbum } from "@/types";
 import {
   searchItunesAlbums,
@@ -94,14 +95,10 @@ async function searchGet(request: Request) {
     }
 
     const local = await localAlbums(q, kind);
-    const qualified = local.filter((a) =>
-      [
-        normalize(a.title + " " + a.artist),
-        normalize(a.artist + " " + a.title),
-      ].includes(normalize(q)),
-    );
-    if (qualified.length)
-      return NextResponse.json({ albums: qualified, users: [], artists: [] });
+    // Query the digital catalog even when MusicBrainz is healthy. Its edition
+    // and artwork should not disappear just because the other source won a race.
+    let digitalError: unknown;
+    const digital = searchItunesAlbums(q, kind).catch(error => { digitalError = error; return [] as SearchResultAlbum[]; });
     const albums = await withMusicFallback<SearchResultAlbum[]>(
       async () => {
         const results = await searchAlbums(
@@ -121,15 +118,18 @@ async function searchGet(request: Request) {
       },
       async () => {
         try {
-          const backup = await searchItunesAlbums(q, kind);
-          return backup.length ? backup : local;
+          const backup = await digital;
+          if (backup.length) return backup;
+          if (local.length) return local;
+          if (digitalError) throw digitalError;
+          return [];
         } catch (error) {
           if (local.length) return local;
           throw error;
         }
       },
     );
-    return NextResponse.json({ albums, users: [], artists: [] });
+    return NextResponse.json({ albums: mergeCatalogAlbums(q, local, albums, await digital), users: [], artists: [] });
   } catch (error) {
     console.error("Search API route error:", error);
     return NextResponse.json(
@@ -184,9 +184,10 @@ async function searchPost(request: Request) {
         );
       return itunesDiscography(matches[0].id, kind);
     };
+    const digital = backup().catch(() => [] as SearchResultAlbum[]);
     const albums =
       source === "itunes"
-        ? await backup()
+        ? await itunesDiscography(artistId, kind)
         : await withMusicFallback<SearchResultAlbum[]>(async () => {
             const releases = await getArtistReleases(
               artistId,
@@ -201,8 +202,8 @@ async function searchPost(request: Request) {
               year: a.year,
               coverUrl: a.coverUrl,
             }));
-          }, backup);
-    return NextResponse.json({ albums });
+          }, async () => { const result = await digital; if (!result.length) throw new Error("No pudimos cargar el catálogo alternativo"); return result; });
+    return NextResponse.json({ albums: mergeCatalogAlbums(artistName || "", albums, await digital) });
   } catch (error) {
     console.error("Artist discography fetch error:", error);
     return NextResponse.json(

@@ -1,3 +1,5 @@
+import { InProgressAlbums } from "@/components/InProgressAlbums";
+import { groupAlbumProgress, type AlbumProgress } from "@/lib/albums/progress";
 import { ItunesBadge } from "@/components/ItunesBadge";
 import { SavedAlbums } from "@/components/AlbumLibrary";
 import Image from "next/image";
@@ -37,7 +39,9 @@ export default async function ProfilePage({
     data: { user },
   } = await supabase.auth.getUser();
   const isOwnProfile = user?.id === profile.id;
-  const savedTab = isOwnProfile && (await searchParams).tab === "saved";
+  const tab = isOwnProfile ? (await searchParams).tab : undefined;
+  const savedTab = tab === "saved";
+  const progressTab = tab === "progress";
 
   // If profile is private and not own, show restricted view
   if (profile.privacy === "private" && !isOwnProfile) {
@@ -57,11 +61,40 @@ export default async function ProfilePage({
   }
 
   // Fetch rated albums
-  const { data: ratings } = await supabase
+  const { data: ratings, error: ratingsError } = await supabase
     .from("album_ratings")
     .select("id, rating, album_id, albums(id, title, artist_name, cover_url, artwork_itunes_id)")
     .eq("user_id", profile.id)
     .order("updated_at", { ascending: false });
+
+  let progressAlbums: AlbumProgress[] = [];
+  let progressFailed = false;
+  if (progressTab) {
+    const { data: trackRatings, error } = await supabase
+      .from("track_ratings")
+      .select("track_id, tracks!inner(album_id)")
+      .eq("user_id", profile.id)
+      .order("updated_at", { ascending: false });
+    progressFailed = !!error || !!ratingsError;
+    const rows = (trackRatings || []).flatMap((row) => {
+      const track = Array.isArray(row.tracks) ? row.tracks[0] : row.tracks;
+      return track ? [{ track_id: row.track_id, album_id: track.album_id }] : [];
+    });
+    const pending = groupAlbumProgress(rows, (ratings || []).map((rating) => rating.album_id));
+    if (!progressFailed && pending.size) {
+      const { data: albums, error: albumError } = await supabase
+        .from("albums")
+        .select("id, title, artist_name, cover_url, tracks(count)")
+        .in("id", [...pending.keys()]);
+      progressFailed = !!albumError;
+      const byId = new Map((albums || []).map((album) => [album.id, album]));
+      progressAlbums = [...pending].flatMap(([id, tracks]) => {
+        const album = byId.get(id);
+        return album ? [{ id, title: album.title, artist_name: album.artist_name,
+          cover_url: album.cover_url, rated: tracks.size, total: album.tracks[0]?.count || 0 }] : [];
+      });
+    }
+  }
 
   const totalRated = ratings?.length || 0;
   const avgRating =
@@ -196,7 +229,7 @@ export default async function ProfilePage({
       {/* Rated Albums */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
         <h2 className="section-title" style={{ marginBottom: 0 }}>
-          {savedTab ? "Álbumes guardados" : "Álbumes calificados"}
+          {progressTab ? "Termina de calificar" : savedTab ? "Álbumes guardados" : "Álbumes calificados"}
         </h2>
         <Link
           href={`/profile/${username}/statistics`}
@@ -206,8 +239,8 @@ export default async function ProfilePage({
         </Link>
       </div>
 
-      {isOwnProfile && <nav aria-label="Tu biblioteca" className="flex flex-wrap gap-3 mb-6"><Link className={`btn ${!savedTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}`} aria-current={!savedTab ? "page" : undefined}>Álbumes calificados</Link><Link className={`btn ${savedTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}?tab=saved`} aria-current={savedTab ? "page" : undefined}>Álbumes guardados · Privados</Link></nav>}
-      {savedTab ? <SavedAlbums /> : totalRated === 0 ? (
+      {isOwnProfile && <nav aria-label="Tu biblioteca" className="flex flex-wrap gap-3 mb-6"><Link className={`btn ${!savedTab && !progressTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}`} aria-current={!savedTab && !progressTab ? "page" : undefined}>Álbumes calificados</Link><Link className={`btn ${savedTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}?tab=saved`} aria-current={savedTab ? "page" : undefined}>Álbumes guardados · Privados</Link><Link className={`btn ${progressTab ? "btn-primary" : "btn-outline"} text-xs`} href={`/profile/${username}?tab=progress`} aria-current={progressTab ? "page" : undefined}>Termina de calificar · Privados</Link></nav>}
+      {progressTab ? <InProgressAlbums albums={progressAlbums} failed={progressFailed} /> : savedTab ? <SavedAlbums /> : totalRated === 0 ? (
         <div className="card p-12 text-center">
           <p className="text-muted text-sm">
             {isOwnProfile

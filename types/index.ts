@@ -101,6 +101,10 @@ export interface MBSearchResult {
 // ─── Search ─────────────────────────────────────────────────────────────────
 
 export interface SearchResultAlbum {
+  trackCount?: number;
+  explicitness?: string;
+  editionDescription?: string;
+  country?: string;
   artworkItunesId?:string;
   mbid: string;
   entityType?: "release" | "release-group" | "itunes";

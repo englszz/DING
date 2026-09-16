@@ -197,3 +197,14 @@ test("cancelled queued searches do not contact MusicBrainz",async()=>{
  global.dingMusicBrainz.cache.clear();global.dingMusicBrainz.nextRequest=Date.now()+1000;let calls=0;global.fetch=async()=>{calls++;throw Error('Unexpected fetch');};
  const controller=new AbortController();const work=api.searchAlbums("cancel", "album",controller.signal);controller.abort();await assert.rejects(work,{name:'AbortError'});assert.equal(calls,0);global.dingMusicBrainz.nextRequest=0;
 });
+
+test("MusicBrainz rejects tracklists shorter than the declared medium count", async () => {
+  mockFetch(() => ({ id: "partial", title: "BULLY", media: [
+    { "track-count": 18, tracks: [{ position: 1, title: "First" }] },
+  ] }));
+  await assert.rejects(api.getAlbumDetails("partial"), /todas las canciones/);
+  mockFetch(() => ({ id: "complete", title: "Album", media: [
+    { "track-count": 2, tracks: [{ position: 1, title: "First" }, { position: 2, title: "Second" }] },
+  ] }));
+  assert.equal((await api.getAlbumDetails("complete")).tracks.length, 2);
+});

@@ -19,7 +19,7 @@ export async function localAlbums(
     const db = await createClient();
     let builder = db
       .from("albums")
-      .select("id,external_id,title,artist_name,release_date,cover_url,artwork_itunes_id")
+      .select("id,external_id,title,artist_name,release_date,cover_url,artwork_itunes_id,tracks(count)")
       .limit(50)
       .abortSignal(AbortSignal.timeout(1200));
     for (const word of words)
@@ -37,6 +37,7 @@ export async function localAlbums(
           : ("release" as const),
         albumId: a.id,
         title: a.title,
+        trackCount: a.tracks?.[0]?.count || undefined,
         artist: a.artist_name,
         year: a.release_date || undefined,
         coverUrl: a.cover_url || undefined,

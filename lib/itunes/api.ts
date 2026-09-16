@@ -7,6 +7,7 @@ import {
 import type { SearchResultAlbum } from "@/types";
 interface Item {
   artworkUrl100?:string;
+  collectionExplicitness?: string;
   wrapperType?: string;
   kind?: string;
   collectionId?: number;
@@ -107,6 +108,8 @@ function albums(items: Item[], kind: ReleaseKind): SearchResultAlbum[] {
             year: a.releaseDate?.slice(0, 4),
             coverUrl:itunesArtworkUrl(a.artworkUrl100),
             artworkItunesId:String(a.collectionId),
+            trackCount:a.trackCount,
+            explicitness:a.collectionExplicitness,
           },
         ]),
     ).values(),

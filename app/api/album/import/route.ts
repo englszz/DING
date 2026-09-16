@@ -157,7 +157,7 @@ export async function POST(request: Request) {
     if (result.error) throw result.error;
     return NextResponse.json({ albumId: result.data });
   } catch (error) {
-    if (error instanceof Error && error.name === "IncompleteItunesAlbumError") {
+    if (error instanceof Error && ["IncompleteItunesAlbumError", "IncompleteMusicBrainzAlbumError"].includes(error.name)) {
       console.warn("album_import_incomplete", { entityType, elapsedMs: Date.now() - started });
       return NextResponse.json({ error: error.message }, { status: 422 });
     }
