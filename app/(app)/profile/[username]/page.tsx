@@ -256,7 +256,7 @@ export default async function ProfilePage({
             return (
               <div key={r.id} className="relative">
                 <Link
-                  href={`/album/${album.id}`}
+                  href={`/album/${album.id}?profile=${encodeURIComponent(username)}`}
                   className="card-album group block"
                 >
                   <div className="w-full aspect-square bg-[var(--color-surface-alt)] flex items-center justify-center relative border-b border-[var(--color-border)] overflow-hidden">

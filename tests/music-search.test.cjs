@@ -11,7 +11,7 @@ function load(file, dependencies = {}) {
   }).outputText;
   const compiledModule = { exports: {} };
   new Function("require", "module", "exports", source)(
-    name => dependencies[name] ?? require(name), compiledModule, compiledModule.exports);
+    name => dependencies[name] ?? (name.startsWith("@/lib/security/") ? load(name.replace("@/", "") + ".ts") : name === "@/lib/supabase/catalog-admin" ? {catalogWrite: async (_, operation, args) => (await dependencies["@/lib/supabase/server"].createClient()).rpc(operation,args)} : require(name)), compiledModule, compiledModule.exports);
   return compiledModule.exports;
 }
 const search = load("lib/musicbrainz/search.ts");

@@ -1,3 +1,5 @@
+import { boundedJson } from "@/lib/security/request";
+import { escapeSearchTerm } from "@/lib/security/validation";
 import { mergeCatalogAlbums } from "@/lib/catalog/merge";
 import type { SearchResultAlbum } from "@/types";
 import {
@@ -46,6 +48,7 @@ async function searchGet(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
+      const term = escapeSearchTerm(q);
       let query = supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url, is_admin")
@@ -53,11 +56,11 @@ async function searchGet(request: Request) {
 
       if (user) {
         query = query.or(
-          `and(username.ilike.%${q}%,privacy.eq.public),and(username.ilike.%${q}%,id.eq.${user.id}),and(display_name.ilike.%${q}%,privacy.eq.public),and(display_name.ilike.%${q}%,id.eq.${user.id})`,
+          `and(username.ilike.${term},privacy.eq.public),and(username.ilike.${term},id.eq.${user.id}),and(display_name.ilike.${term},privacy.eq.public),and(display_name.ilike.${term},id.eq.${user.id})`,
         );
       } else {
         query = query
-          .or(`username.ilike.%${q}%,display_name.ilike.%${q}%`)
+          .or(`username.ilike.${term},display_name.ilike.${term}`)
           .eq("privacy", "public");
       }
 
@@ -144,7 +147,7 @@ async function searchGet(request: Request) {
  */
 async function searchPost(request: Request) {
   try {
-    const body = await request.json();
+    const body = await boundedJson(request);
     const parsed = z
       .object({
         artistId: z.string().min(1).max(50),
@@ -219,6 +222,12 @@ async function timed(
   operation: string,
 ) {
   const started = Date.now();
+  const db = await createClient();
+  const {data:{user}} = await db.auth.getUser();
+  if (!user) return NextResponse.json({error:"Inicia sesión para buscar."},{status:401});
+  const allowance = await db.rpc("ding_allow_search");
+  if (allowance.error) return NextResponse.json({error:"La búsqueda no está disponible temporalmente."},{status:503});
+  if (!allowance.data) return NextResponse.json({error:"Has realizado muchas búsquedas. Espera un minuto."},{status:429,headers:{"Retry-After":"60"}});
   const response = await handler(request);
   const duration = Date.now() - started;
   response.headers.set("Server-Timing", `search;dur=${duration}`);

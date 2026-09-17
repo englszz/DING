@@ -1,6 +1,6 @@
 "use client";
 
-import { TrackComments } from "@/components/TrackComments";
+import { SongReview, type PersonalSongReview } from "@/components/SongReview";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
@@ -19,9 +19,13 @@ interface TrackListProps {
   initialTrackRatings: Record<string, number>;
   isOwner: boolean;
   hasAlbumRating?: boolean;
+  reviews?: Record<string, PersonalSongReview>;
+  currentUserId?: string | null;
+  ownerLabel?: string;
+  databaseReady?: boolean;
 }
 
-export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating = false }: TrackListProps) {
+export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating = false, reviews = {}, currentUserId = null, ownerLabel = "", databaseReady = true }: TrackListProps) {
   const [trackRatings, setTrackRatings] = useState<Record<string, number>>(initialTrackRatings);
 
   const handleRatingChange = (trackId: string, rating: number | null) => {
@@ -102,7 +106,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating
                     {formatDuration(track.duration_ms)}
                   </span>
                   {currentRating !== undefined && (
-                    <div className="rating-badge text-xs py-1 px-3 hidden sm:flex">
+                    <div className="rating-badge text-xs py-1 px-3 flex">
                       <FontAwesomeIcon
                         icon={faStar}
                         className="text-[10px] mr-1"
@@ -118,7 +122,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating
                     />
                   )}
                 </div>
-                <TrackComments trackId={track.id} />
+                <SongReview trackId={track.id} initialReview={reviews[track.id]} editable={isOwner} currentUserId={currentUserId} ownerLabel={ownerLabel} databaseReady={databaseReady} />
               </div>
             );
           })}
@@ -129,7 +133,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating
       <div className="flex flex-col gap-8">
         <div>
           <h2 className="section-title mb-2">
-            Tus notas, de un vistazo
+            {isOwner ? "Tus notas, de un vistazo" : `Notas de ${ownerLabel}`}
           </h2>
           <div className="mt-6">
             <PieChart ratings={distribution} totalTracks={ratedTracks.length} />
@@ -139,7 +143,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating
         {ratedTracks.length > 0 && (
           <div className="card p-4 text-center">
             <p className="text-muted text-xs font-medium uppercase tracking-wider mb-1">
-              Promedio de tus canciones
+              Promedio de canciones
             </p>
             <p className="text-teal text-2xl font-bold">
               {avgTrackRating}
@@ -148,7 +152,7 @@ export function TrackList({ tracks, initialTrackRatings, isOwner, hasAlbumRating
                 / 10
               </span>
             </p>
-            <p className="text-muted text-xs mt-2">Este promedio no sustituye tu calificación general del álbum.</p>
+            <p className="text-muted text-xs mt-2">Este promedio no sustituye la calificación general del álbum.</p>
           </div>
         )}
       </div>

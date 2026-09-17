@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeProfileUrl } from "@/lib/security/validation";
+import sharp from "sharp";
 import { redirect } from "next/navigation";
 
 export async function signOutAction() {
@@ -52,6 +54,7 @@ export async function updateAvatarFile(dataUrl: string, mimeType: string) {
 
   if (!user) throw new Error("Not authenticated");
 
+  if (!["image/png", "image/jpeg", "image/webp"].includes(mimeType) || dataUrl.length > 2800000 || !dataUrl.startsWith(`data:${mimeType};base64,`)) throw new Error("Usa una imagen PNG, JPEG o WebP de hasta 2 MB.");
   // Convert data URL to buffer
   const base64 = dataUrl.split(",")[1];
   const binary = atob(base64);
@@ -60,14 +63,16 @@ export async function updateAvatarFile(dataUrl: string, mimeType: string) {
     bytes[i] = binary.charCodeAt(i);
   }
 
-  const ext = mimeType.split("/")[1] || "png";
+  if (bytes.length > 2097152) throw new Error("La imagen supera 2 MB.");
+  const cleanImage = await sharp(bytes, { limitInputPixels: 16000000 }).rotate().resize(512,512,{fit:"cover",withoutEnlargement:true}).webp().toBuffer();
+  const ext = "webp";
   const path = `${user.id}/avatar.${ext}`;
 
   // Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
     .from("avatars")
-    .upload(path, bytes, {
-      contentType: mimeType,
+    .upload(path, cleanImage, {
+      contentType: "image/webp",
       upsert: true,
     });
 
@@ -91,6 +96,7 @@ export async function updateAvatarFile(dataUrl: string, mimeType: string) {
 }
 
 export async function updateBio(bio: string) {
+  if (typeof bio !== "string" || bio.length > 2000) throw new Error("La biografía admite hasta 2000 caracteres.");
   const supabase = await createClient();
   const {
     data: { user },
@@ -160,10 +166,10 @@ export async function updateSocialLinks(links: {
   const { error } = await supabase
     .from("profiles")
     .update({
-      website_url: links.website_url || null,
-      instagram_url: links.instagram_url || null,
-      twitter_url: links.twitter_url || null,
-      facebook_url: links.facebook_url || null,
+      website_url: safeProfileUrl(links.website_url),
+      instagram_url: safeProfileUrl(links.instagram_url),
+      twitter_url: safeProfileUrl(links.twitter_url),
+      facebook_url: safeProfileUrl(links.facebook_url),
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);

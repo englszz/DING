@@ -15,6 +15,7 @@ export async function saveAlbumRating(
 
   if (!user) throw new Error("Not authenticated");
 
+  if (typeof review !== "string" || review.length > 10000) throw new Error("La reseña admite hasta 10000 caracteres.");
   // Validate rating
   const rounded = Math.round(rating * 10) / 10;
   if (!Number.isFinite(rating) || rating < 0 || rating > 10) throw new Error("Invalid rating");
@@ -114,6 +115,7 @@ export async function saveTrackReview(
 
   if (!user) throw new Error("Not authenticated");
 
+  if (typeof comment !== "string" || comment.length > 2000) throw new Error("La opinión admite hasta 2000 caracteres.");
   // Verify the album_rating belongs to this user
   const { data: existing } = await supabase
     .from("album_ratings")

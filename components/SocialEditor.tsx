@@ -1,5 +1,6 @@
 "use client";
 
+import { profileUrlForDisplay } from "@/lib/security/validation";
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -118,7 +119,7 @@ export function SocialEditor({
           <>
             {websiteUrl && (
               <a
-                href={websiteUrl}
+                href={profileUrlForDisplay(websiteUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
@@ -128,7 +129,7 @@ export function SocialEditor({
             )}
             {instagramUrl && (
               <a
-                href={instagramUrl}
+                href={profileUrlForDisplay(instagramUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
@@ -138,7 +139,7 @@ export function SocialEditor({
             )}
             {twitterUrl && (
               <a
-                href={twitterUrl}
+                href={profileUrlForDisplay(twitterUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"
@@ -148,7 +149,7 @@ export function SocialEditor({
             )}
             {facebookUrl && (
               <a
-                href={facebookUrl}
+                href={profileUrlForDisplay(facebookUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 flex items-center justify-center border border-[var(--color-border)] hover:border-teal transition-colors"

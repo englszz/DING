@@ -46,7 +46,8 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
-  if (isProtected && !user) {
+  const publicAlbumReview = /^\/album\/[^/]+$/.test(request.nextUrl.pathname) && !!request.nextUrl.searchParams.get("profile");
+  if (isProtected && !publicAlbumReview && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);

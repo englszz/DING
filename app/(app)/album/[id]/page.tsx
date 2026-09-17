@@ -14,11 +14,13 @@ import { BackButton } from "@/components/BackButton";
 import { ReviewComments } from "@/components/ReviewComments";
 
 export default async function AlbumDetailPage({
-  params,
+  params, searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ profile?: string }>;
 }) {
   const { id } = await params;
+  const { profile: profileName } = await searchParams;
 
   const result = await getAlbumWithTracks(id);
   if (!result) notFound();
@@ -30,14 +32,39 @@ export default async function AlbumDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const profileQuery = supabase.from("profiles").select("id,username,privacy");
+  const { data: owner, error: profileError } = profileName
+    ? await profileQuery.eq("username", profileName).maybeSingle()
+    : user ? await profileQuery.eq("id", user.id).maybeSingle() : { data: null, error: null };
+  if (profileError) throw profileError;
+  if (!owner || (owner.privacy !== "public" && owner.id !== user?.id)) notFound();
+  const isOwner = owner.id === user?.id;
+  const ownerLabel = `@${owner.username}`;
+  const trackIds = tracks.map(track => track.id);
+  const [reviewResult, topResult] = await Promise.all([
+    supabase.from("song_reviews").select("id,track_id,content").eq("user_id", owner.id).in("track_id", trackIds),
+    supabase.from("album_top_three").select("first_track_id,second_track_id,third_track_id").eq("user_id", owner.id).eq("album_id", album.id).maybeSingle(),
+  ]);
+  const missingTable = (error: { code: string } | null) => error && ["42P01", "PGRST205"].includes(error.code);
+  if (reviewResult.error && !missingTable(reviewResult.error)) throw reviewResult.error;
+  if (topResult.error && !missingTable(topResult.error)) throw topResult.error;
+  const reviews: Record<string, { id: string | null; content: string }> = {};
+  for (const row of reviewResult.data || []) reviews[row.track_id] = { id: row.id, content: row.content };
+  if (missingTable(reviewResult.error)) {
+    const { data: legacy, error } = await supabase.from("track_comments").select("track_id,content").eq("user_id", owner.id).in("track_id", trackIds);
+    if (error) throw error;
+    for (const row of legacy || []) reviews[row.track_id] = { id: null, content: row.content };
+  }
+  const top = topResult.data;
+
   const { data: group } = await supabase.from("album_groups").select("release_group_id").eq("album_id",album.id).limit(1).maybeSingle();
 
   // Fetch user's album rating
-  const { data: userRating } = user
+  const { data: userRating } = owner
     ? await supabase
         .from("album_ratings")
         .select("id, rating, review")
-        .eq("user_id", user.id)
+        .eq("user_id", owner.id)
         .eq("album_id", album.id)
         .single()
     : { data: null };
@@ -58,11 +85,11 @@ export default async function AlbumDetailPage({
   });
 
   // Fetch track ratings from track_ratings table
-  const { data: allTrackRatings } = user
+  const { data: allTrackRatings } = owner
     ? await supabase
         .from("track_ratings")
         .select("track_id, rating")
-        .eq("user_id", user.id)
+        .eq("user_id", owner.id)
         .in(
           "track_id",
           tracks.map((t) => t.id)
@@ -78,6 +105,7 @@ export default async function AlbumDetailPage({
     <div className="page-container py-4 flex-1 w-full max-w-4xl">
       {/* Back link */}
       <BackButton label="Volver" />
+      {profileName && <p className="text-sm text-muted my-4">Reseña de <Link className="text-teal" href={`/profile/${owner.username}`}>{ownerLabel}</Link>{!isOwner && user && <> · <Link className="text-teal underline" href={`/album/${id}`}>Ver mi valoración</Link></>}</p>}
 
       {/* Album Header */}
       <div className="card p-4 sm:p-6 mb-8 overflow-hidden">
@@ -109,7 +137,7 @@ export default async function AlbumDetailPage({
               {userRating?.review && (
                 <div className="card-alt mt-4 p-4 border border-[var(--color-border)]">
                   <p className="text-xs font-semibold text-muted mb-1 uppercase tracking-wider">
-                    Mi Reseña:
+                    {isOwner ? "Mi reseña:" : `Reseña de ${ownerLabel}:`}
                   </p>
                   <p className="text-sm text-[var(--color-text)] italic font-medium">
                     &ldquo;{userRating.review}&rdquo;
@@ -122,7 +150,7 @@ export default async function AlbumDetailPage({
             {!album.external_id.startsWith("itunes:") && <p className="text-muted text-xs mt-2">¿La portada o las canciones no coinciden con la versión que escuchaste? <Link className="text-teal underline" href={`/search?q=${encodeURIComponent(album.title + " " + album.artist_name)}&source=itunes`}>Buscar la edición digital</Link>. Tus notas se conservan en esta edición.</p>}
             <ItunesBadge id={album.artwork_itunes_id} coverUrl={album.cover_url} />
             {/* Actions */}
-            <div className="mt-6" id="album-rating">
+            {isOwner && <div className="mt-6" id="album-rating">
               <AlbumActions
                 albumId={album.id}
                 saveReference={{mbid:group?.release_group_id || (album.external_id.startsWith("itunes:") ? album.external_id.slice(7) : album.external_id),entityType:group ? "release-group" : album.external_id.startsWith("itunes:") ? "itunes" : "release",title:album.title,artist:album.artist_name,coverUrl:album.cover_url || undefined,year:album.release_date || undefined}}
@@ -130,15 +158,17 @@ export default async function AlbumDetailPage({
                 existingReview={userRating?.review || null}
                 deleteRatingId={userRating?.id}
               />
-            </div>
+            </div>}
           </div>
         </div>
       </div>
 
-      {user && <AlbumTopThree key={`${user.id}:${album.id}`} albumId={album.id} userId={user.id} tracks={tracks} />}
+      <AlbumTopThree key={`${owner.id}:${album.id}`} albumId={album.id} userId={owner.id} tracks={tracks} initialTrackIds={top ? [top.first_track_id, top.second_track_id, top.third_track_id] : []} editable={isOwner} ownerLabel={ownerLabel} databaseReady={!topResult.error} />
+      <TrackList key={`${owner.id}:${album.id}`} tracks={tracks} initialTrackRatings={trackRatingMap} isOwner={isOwner} hasAlbumRating={!!userRating} reviews={reviews} currentUserId={user?.id ?? null} ownerLabel={ownerLabel} databaseReady={!reviewResult.error} />
+      {profileName && userRating && <ReviewComments ratingId={userRating.id} currentUserId={user?.id ?? null} />}
 
       {/* Community Reviews */}
-      {visibleReviews.length > 0 && (
+      {!profileName && visibleReviews.length > 0 && (
         <>
           <h2 className="section-title" style={{ marginBottom: "28px" }}>
             Calificaciones de la comunidad
@@ -200,13 +230,7 @@ export default async function AlbumDetailPage({
         </>
       )}
 
-      {/* Tracklist with pie chart (client component for live updates) */}
-      <TrackList
-        tracks={tracks}
-        initialTrackRatings={trackRatingMap}
-        isOwner={!!user}
-        hasAlbumRating={!!userRating}
-      />
+
     </div>
   );
 }

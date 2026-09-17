@@ -7,7 +7,7 @@ function load(file, deps = {}) {
   const compiled = { exports: {} };
   new Function("require", "module", "exports", ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText)(name => deps[name] ?? require(name), compiled, compiled.exports);
+  }).outputText)(name => deps[name] ?? (name.startsWith("@/lib/security/") ? load(name.replace("@/", "") + ".ts") : name === "@/lib/supabase/catalog-admin" ? {catalogWrite: async (_, operation, args) => (await deps["@/lib/supabase/server"].createClient()).rpc(operation,args)} : require(name)), compiled, compiled.exports);
   return compiled.exports;
 }
 const search = load("lib/musicbrainz/search.ts");
@@ -58,7 +58,7 @@ function searchRoute({ primary, digital, local = [] }) {
     "@/lib/catalog/fallback": { withMusicFallback: async (main, backup) => { try { return await main(); } catch { return backup(); } } },
     "@/lib/itunes/api": { searchItunesAlbums: digital },
     "@/lib/musicbrainz/api": { searchAlbums: primary },
-    "@/lib/supabase/server": { createClient: async () => { throw Error("Not used for album search"); } },
+    "@/lib/supabase/server": { createClient: async () => ({auth:{getUser:async()=>({data:{user:{id:"viewer"}}})},rpc:async()=>({data:true})}) },
   });
 }
 test("healthy MusicBrainz does not hide the matching digital album", async () => {

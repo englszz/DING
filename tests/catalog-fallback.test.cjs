@@ -15,7 +15,7 @@ function load(file, deps = {}) {
         target: ts.ScriptTarget.ES2022,
       },
     }).outputText,
-  )((name) => deps[name] ?? require(name), m, m.exports);
+  )((name) => deps[name] ?? (name.startsWith("@/lib/security/") ? load(name.replace("@/", "") + ".ts") : name === "@/lib/supabase/catalog-admin" ? {catalogWrite: async (_, operation, args) => (await deps["@/lib/supabase/server"].createClient()).rpc(operation,args)} : require(name)), m, m.exports);
   return m.exports;
 }
 const search = load("lib/musicbrainz/search.ts");

@@ -1,3 +1,5 @@
+import { boundedJson } from "@/lib/security/request";
+import { catalogWrite } from "@/lib/supabase/catalog-admin";
 import { normalize } from "@/lib/musicbrainz/search";
 import { itunesAlbum, searchItunesAlbums } from "@/lib/itunes/api";
 import { NextResponse } from "next/server";
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
       { error: "Inicia sesión para abrir el álbum." },
       { status: 401 },
     );
-  const parsed = schema.safeParse(await request.json().catch(() => null));
+  const parsed = schema.safeParse(await boundedJson(request));
   if (!parsed.success)
     return NextResponse.json(
       { error: "Referencia de álbum inválida." },
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     if (error) throw error;
     if (ref) return ref.album_id as string;
     const details = await itunesAlbum(id);
-    const result = await supabase.rpc("ding_import_itunes", {
+    const result = await catalogWrite(user!.id, "ding_import_itunes", {
       p_external_id: id,
       p_details: details,
     });
@@ -89,7 +91,7 @@ export async function POST(request: Request) {
       if (album?.tracks?.length)
         return NextResponse.json({ albumId: album.id });
     }
-    const claim = await supabase.rpc("ding_claim_import", { p_key: key });
+    const claim = await catalogWrite(user!.id, "ding_claim_import", { p_key: key });
     if (claim.error) throw claim.error;
     token = claim.data;
     if (!token)
@@ -115,7 +117,7 @@ export async function POST(request: Request) {
           releaseId = saved[0].external_id;
           matched = true;
           if (saved[0].tracks?.length) {
-            const result = await supabase.rpc("ding_finish_import", {
+            const result = await catalogWrite(user!.id, "ding_finish_import", {
               p_key: key,
               p_token: token,
               p_release_id: releaseId,
@@ -147,7 +149,7 @@ export async function POST(request: Request) {
         },
         { status: 502 },
       );
-    const result = await supabase.rpc("ding_finish_import", {
+    const result = await catalogWrite(user!.id, "ding_finish_import", {
       p_key: key,
       p_token: token,
       p_release_id: releaseId,
@@ -230,7 +232,7 @@ export async function POST(request: Request) {
     });
     if (token) {
       try {
-        await supabase.rpc("ding_release_import", {
+        await catalogWrite(user!.id, "ding_release_import", {
           p_key: key,
           p_token: token,
         });

@@ -16,6 +16,7 @@ const {
   screen,
   fireEvent,
   cleanup,
+  waitFor,
 } = require("@testing-library/react");
 afterEach(cleanup);
 after(() => dom.window.close());
@@ -36,7 +37,7 @@ function load(file, deps) {
   return m.exports;
 }
 
-const { AlbumTopThree } = load("components/AlbumTopThree.tsx", {});
+const { AlbumTopThree } = load("components/AlbumTopThree.tsx", { "@/app/(app)/album/song-reviews": { saveAlbumTopThree: async (_, ids) => ids } });
 const { groupAlbumProgress } = load("lib/albums/progress.ts", {});
 const { PieChart } = load("components/PieChart.tsx", {});
 global.localStorage = dom.window.localStorage;
@@ -54,7 +55,7 @@ test("top three requires distinct selections, persists order, and isolates accou
   fireEvent.change(selects[1], { target: { value: "0" } });
   fireEvent.change(selects[2], { target: { value: "3" } });
   fireEvent.click(screen.getByText("Guardar top 3"));
-  assert.deepEqual(JSON.parse(localStorage.getItem("ding:top-three:alice:album")), ["2", "0", "3"]);
+  await waitFor(() => assert.deepEqual(JSON.parse(localStorage.getItem("ding:top-three:alice:album")), ["2", "0", "3"]));
   assert.equal(screen.queryByRole("combobox"), null);
   view.unmount();
   const restored = render(React.createElement(AlbumTopThree, props));
@@ -63,7 +64,7 @@ test("top three requires distinct selections, persists order, and isolates accou
   fireEvent.click(screen.getByText("Editar mi top 3"));
   fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "1" } });
   fireEvent.click(screen.getByText("Cancelar"));
-  assert.deepEqual(JSON.parse(localStorage.getItem("ding:top-three:alice:album")), ["2", "0", "3"]);
+  await waitFor(() => assert.deepEqual(JSON.parse(localStorage.getItem("ding:top-three:alice:album")), ["2", "0", "3"]));
   restored.unmount();
   render(React.createElement(AlbumTopThree, { ...props, userId: "bob" }));
   await screen.findByText("Elegir mis canciones");
@@ -121,4 +122,50 @@ test("published comments are read-only; editing can cancel, retry, and close on 
   await screen.findByText("Comentario guardado.");
   assert.equal(screen.queryByRole("textbox"), null);
   assert.equal(own, "Comentario editado");
+});
+
+
+test("a visitor sees only account top three, never another user's browser cache", () => {
+  localStorage.setItem("ding:top-three:alice:album", JSON.stringify(["2","0","3"]));
+  render(React.createElement(AlbumTopThree, { albumId:"album", userId:"alice", tracks, editable:false, initialTrackIds:["0","1","2"], ownerLabel:"@alice" }));
+  assert.deepEqual(screen.getAllByRole("listitem").map(li => li.textContent), ["1Uno","2Dos","3Tres"]);
+  assert.equal(screen.queryByText("Editar mi top 3"), null);
+});
+
+let failReview = false;
+const { SongReview } = load("components/SongReview.tsx", {
+  "@/app/(app)/album/song-reviews": {
+    saveSongReview: async (_, content) => { if (failReview) throw Error(); return {id:"review",content}; },
+    readSongDiscussion: async () => [], addSongDiscussionComment: async () => {},
+  },
+});
+test("song opinion is visible immediately; failed save preserves draft and retry succeeds", async () => {
+  render(React.createElement(SongReview,{trackId:"track",initialReview:{id:"review",content:"Original opinion"},editable:true,currentUserId:"alice",ownerLabel:"@alice",databaseReady:true}));
+  assert.ok(screen.getByText("Original opinion"));
+  fireEvent.click(screen.getByText("Editar mi opinión"));
+  fireEvent.change(screen.getByLabelText("Mi opinión"),{target:{value:"Revised opinion"}});
+  failReview=true;
+  fireEvent.click(screen.getByText("Guardar opinión"));
+  await screen.findByRole("alert");
+  assert.equal(screen.getByLabelText("Mi opinión").value,"Revised opinion");
+  failReview=false;
+  fireEvent.click(screen.getByText("Guardar opinión"));
+  await screen.findByText("Revised opinion");
+  assert.equal(screen.queryByText("Guardar opinión"),null);
+});
+
+test("server revalidation during top three import never leaves a permanent loader",async()=>{
+ localStorage.setItem('ding:top-three:alice:album',JSON.stringify(['0','1','2']));
+ let resolveImport;
+ const {AlbumTopThree:PendingTop}=load('components/AlbumTopThree.tsx',{'@/app/(app)/album/song-reviews':{saveAlbumTopThree:()=>new Promise(resolve=>{resolveImport=resolve;})}});
+ const props={albumId:'album',userId:'alice',tracks};
+ const view=render(React.createElement(PendingTop,props));
+ await waitFor(()=>assert.ok(resolveImport));
+ view.rerender(React.createElement(PendingTop,{...props,initialTrackIds:['0','1','2']}));
+ await screen.findByText('Editar mi top 3');
+ assert.equal(screen.queryByText('Cargando tu selección…'),null);
+ resolveImport(['0','1','2']);
+ view.unmount();
+ render(React.createElement(PendingTop,{...props,initialTrackIds:['0','1','2']}));
+ assert.deepEqual(screen.getAllByRole('listitem').map(li=>li.textContent),['1Uno','2Dos','3Tres']);
 });

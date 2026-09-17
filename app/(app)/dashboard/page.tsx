@@ -4,7 +4,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus,
   faStar,
   faCompactDisc,
   faClock,
@@ -90,8 +89,8 @@ export default async function DashboardPage() {
         </div>
 
         <Link href="/search" className="btn btn-primary text-xs sm:text-sm py-2 sm:py-3 px-3 sm:px-4">
-          <FontAwesomeIcon icon={faPlus} />
-          <span>Registrar escucha</span>
+          <FontAwesomeIcon icon={faMagnifyingGlass} />
+          <span>Buscar</span>
         </Link>
       </header>
 

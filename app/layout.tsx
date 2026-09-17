@@ -9,6 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://ding-pearl.vercel.app"),
   title: "DING — Tu diario musical",
   description:
     "Registra, califica y descubre música. Tu historial de escuchas, tus reseñas, tu mundo musical.",
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "DING",
   },
+  twitter: { card: "summary_large_image", title: "DING — Tu diario musical", description: "Registra, califica y descubre música.", images: [{url: "/opengraph-image", alt: "DING — Tu diario musical"}] },
   openGraph: {
     title: "DING — Tu diario musical",
     description:

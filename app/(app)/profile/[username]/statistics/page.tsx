@@ -197,7 +197,7 @@ export default async function StatisticsPage({
             {(() => {
               const a = highest.albums as any;
               return (
-                <div><Link href={`/album/${a.id}`} className="flex items-center gap-4 group">
+                <div><Link href={`/album/${a.id}?profile=${encodeURIComponent(username)}`} className="flex items-center gap-4 group">
                   <div className="w-16 h-16 relative overflow-hidden flex-shrink-0 bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
                     {a.cover_url && (
                       <Image src={a.cover_url} alt={a.title} fill sizes="64px" className="object-cover" />
@@ -225,7 +225,7 @@ export default async function StatisticsPage({
             {(() => {
               const a = lowest.albums as any;
               return (
-                <div><Link href={`/album/${a.id}`} className="flex items-center gap-4 group">
+                <div><Link href={`/album/${a.id}?profile=${encodeURIComponent(username)}`} className="flex items-center gap-4 group">
                   <div className="w-16 h-16 relative overflow-hidden flex-shrink-0 bg-[var(--color-surface-alt)] border border-[var(--color-border)]">
                     {a.cover_url && (
                       <Image src={a.cover_url} alt={a.title} fill sizes="64px" className="object-cover" />
