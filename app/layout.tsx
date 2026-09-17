@@ -22,12 +22,13 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "DING",
   },
-  twitter: { card: "summary_large_image", title: "DING — Tu diario musical", description: "Registra, califica y descubre música.", images: [{url: "/opengraph-image", alt: "DING — Tu diario musical"}] },
+  twitter: { card: "summary", title: "DING — Tu diario musical", description: "Registra, califica y descubre música.", images: [{url: "/icon.png", alt: "DING: estrella blanca sobre fondo azul"}] },
   openGraph: {
     title: "DING — Tu diario musical",
     description:
       "Registra, califica y descubre música. Tu historial de escuchas, tus reseñas, tu mundo musical.",
     type: "website",
+    images: [{ url: "/icon.png", width: 1504, height: 1348, type: "image/png", alt: "DING: estrella blanca sobre fondo azul" }],
   },
 };
 
