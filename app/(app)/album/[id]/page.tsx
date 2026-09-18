@@ -163,8 +163,8 @@ export default async function AlbumDetailPage({
         </div>
       </div>
 
-      <AlbumTopThree key={`${owner.id}:${album.id}`} albumId={album.id} userId={owner.id} tracks={tracks} initialTrackIds={top ? [top.first_track_id, top.second_track_id, top.third_track_id] : []} editable={isOwner} ownerLabel={ownerLabel} databaseReady={!topResult.error} />
-      <TrackList key={`${owner.id}:${album.id}`} tracks={tracks} initialTrackRatings={trackRatingMap} isOwner={isOwner} hasAlbumRating={!!userRating} reviews={reviews} currentUserId={user?.id ?? null} ownerLabel={ownerLabel} databaseReady={!reviewResult.error} />
+      <AlbumTopThree key={`top-three:${owner.id}:${album.id}`} albumId={album.id} userId={owner.id} tracks={tracks} initialTrackIds={top ? [top.first_track_id, top.second_track_id, top.third_track_id] : []} editable={isOwner} ownerLabel={ownerLabel} databaseReady={!topResult.error} />
+      <TrackList key={`track-list:${owner.id}:${album.id}`} tracks={tracks} initialTrackRatings={trackRatingMap} isOwner={isOwner} hasAlbumRating={!!userRating} reviews={reviews} currentUserId={user?.id ?? null} ownerLabel={ownerLabel} databaseReady={!reviewResult.error} />
       {profileName && userRating && <ReviewComments ratingId={userRating.id} currentUserId={user?.id ?? null} />}
 
       {/* Community Reviews */}

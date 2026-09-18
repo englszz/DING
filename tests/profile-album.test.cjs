@@ -44,3 +44,30 @@ test('private profile is rejected before loading opinions or ratings',async()=>{
  await assert.rejects(m.exports.default({params:Promise.resolve({id:'album'}),searchParams:Promise.resolve({profile:'alice'})}),/NOT_FOUND/);
  assert.deepEqual(queried.map(q=>q.table),['profiles']);
 });
+
+test('album sections stay singular across repeated server refreshes',async()=>{
+ const {JSDOM}=require('jsdom');
+ const dom=new JSDOM('<html><body></body></html>',{url:'http://localhost'});
+ global.window=dom.window;global.document=dom.window.document;global.HTMLElement=dom.window.HTMLElement;
+ const React=require('react');const {render,cleanup}=require('@testing-library/react');
+ const oldError=console.error;const warnings=[];console.error=(...args)=>warnings.push(args.join(' '));
+ function Top(){return React.createElement('section',{'data-testid':'top-three'},'Mi top 3');}
+ function Tracks(){return React.createElement('section',{'data-testid':'tracks'},'Canciones');}
+ try{
+ viewer={id:'author'};privacy='public';
+ const page=await m.exports.default({params:Promise.resolve({id:'album'}),searchParams:Promise.resolve({})});
+ const top=find(page,'AlbumTopThree'),tracks=find(page,'TrackList');
+ // A refreshed leading server segment forces React to reconcile the keyed siblings.
+ const refreshed=revision=>React.createElement('main',null,[
+  React.createElement('header',{key:`server-header-${revision}`},`Guardado ${revision}`),
+  React.createElement(Top,{key:top.key}),React.createElement(Tracks,{key:tracks.key}),
+ ]);
+ const view=render(refreshed(0));
+ for(let revision=1;revision<=30;revision++){
+  view.rerender(refreshed(revision));
+  assert.equal(view.container.querySelectorAll('[data-testid="top-three"]').length,1,`Top 3 duplicated after refresh ${revision}`);
+  assert.equal(view.container.querySelectorAll('[data-testid="tracks"]').length,1);
+ }
+ assert.equal(warnings.some(w=>w.includes('same key')),false,'No duplicate React keys');
+ }finally{cleanup();console.error=oldError;dom.window.close();}
+});
